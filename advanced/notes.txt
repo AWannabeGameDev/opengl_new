@@ -1,0 +1,18 @@
+Render loop right now -
+1. Render scene through each light source individually
+		- Potential for batching different light sources with same type together
+	- Set matrix
+	- Attach shadow map to FBO
+	- Draw scene
+2. Render scene to FBO
+	- Set view matrix and view position
+	- Set light space matrices
+		- Separate arrays for different light source types
+	- Set light source structs
+		- Separate arrays for different light source types
+	- Set shadow maps
+		- Potential for batching different light sources with same type together
+	- Set texture maps and batch render objects with same textures individually
+		- Potential for batching different textures together via texture-arrays
+	- Render skybox
+3. Post processing (Render FBO to default framebuffer)

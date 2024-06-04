@@ -2,10 +2,10 @@
 
 srcDirs = src
 incDirs = ..\dependencies\include
-libDirs = ..\dependencies\lib
+libDirs = ..\dependencies\lib "C:\Program^Files^(x86)\Windows^Kits\10\Lib\10.0.22000.0\um\x64"
 intermDir = interms
 
-libFilesDebug = opengl32 shell32 gdi32 user32 :utility\utility_debug.lib :GLFW\libglfw3.a
+libFilesDebug = utility\utility_debug.lib GLFW\libglfw3.a OpenGL32.lib shell32.lib Gdi32.lib User32.lib
 libFilesRelease = opengl32 Shell32 Gdi32 User32 kernel32 :utility\utility_release.lib GLFW\libglfw3.a
 
 outDebug = bin\advanced_debug.exe
@@ -15,10 +15,13 @@ preDefines =
 
 #-----------------------------------------------------------------------
 
+temp = 
+space = $(temp) $(temp)
+
 srcs = $(foreach dir, $(srcDirs), $(wildcard $(dir)/*.cpp))
 depFlags = -MP -MD
-linkFlags = $(foreach dir, $(libDirs), -L$(dir))
-libFilesDebugFlag = $(foreach file, $(libFilesDebug), -l$(file))
+linkFlags = $(foreach dir, $(libDirs), $(subst ^,$(space), -L$(dir)))
+libFilesDebugFlag = $(foreach file, $(libFilesDebug), -l:$(file))
 libFilesReleaseFlag = $(foreach file, $(libFilesRelease), -l$(file))
 
 debugOptim = -O0
@@ -49,6 +52,9 @@ $(outRelease): deps = $(releaseDeps)
 all: gendirs debug release
 debug: gendirs $(outDebug)
 release: gendirs $(outRelease)
+
+test:
+	@echo $(linkFlags)
 
 gendirs: 
 	@for %%x in ($(srcDirs)) do if not exist $(debugIntermDir)\%%x mkdir $(debugIntermDir)\%%x

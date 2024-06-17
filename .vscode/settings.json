@@ -1,5 +1,13 @@
 {
     "files.associations": {
-        "unordered_map": "cpp"
+        "string_view": "cpp",
+        "cstdlib": "c",
+        "memory_resource": "c",
+        "memory": "c",
+        "*.tcc": "cpp",
+        "fstream": "cpp",
+        "new": "cpp",
+        "stdarg.h": "c",
+        "stdint.h": "c"
     }
 }

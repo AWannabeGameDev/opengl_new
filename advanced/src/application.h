@@ -45,11 +45,13 @@ private :
 
 	void setVAOFormatsAndBuffers(size_t vboSize);
 
-	static constexpr int SKYBOX_TEXTURE_UNIT = 1,
+	static constexpr int FB_COLOR_TEXTURE_UNIT = 0,
+		SKYBOX_TEXTURE_UNIT = 1,
 		DIFFUSE_TEXTURE_UNIT = 2,
 		SPECULAR_TEXTURE_UNIT = 3,
 		EMISSIVE_TEXTURE_UNIT = 4,
-		SHADOW_MAP_TEXTURE_UNIT = 5;
+		NORMAL_TEXTURE_UNIT = 5,
+		SHADOW_MAP_TEXTURE_UNIT = 6;
 
 	static constexpr int VERTEX_POS_ATTRIB_INDEX = 0,
 		VERTEX_TEXCOORD_ATTRIB_INDEX = 1,
@@ -77,17 +79,18 @@ private :
 	unsigned int matsUBO;
 	const unsigned int matsUniformBinding;
 
-	unsigned int blackTexture;
+	unsigned int blackTexture, defaultNormalTexture;
 	unsigned int skybox;
 	unsigned int textureWriteFBO;
-
 	unsigned int cubeDiffuseTexture, floorDiffuseTexture;
 	unsigned int cubeSpecularTexture, floorSpecularTexture;
-	float cubeShininess, floorShininess;
 	unsigned int lightCubeEmissiveTexture;
+	unsigned int floorNormalTexture;
+	float cubeShininess, floorShininess;
 
 	DirectionalLightRender dirLightRender;
 	PointLightRender pointLightRender;
+	const float ambience;
 	static constexpr int SHADOW_MAP_WIDTH = 1024,
 						 SHADOW_MAP_HEIGHT = 1024;
 
@@ -101,15 +104,12 @@ private :
 	unsigned int rbo;
 	unsigned int fbQuadVBO;
 	unsigned int fbQuadEBO;
-	static constexpr int FB_COLOR_TEXTURE_UNIT = 0;
 
 	static constexpr int NUM_CUBES = 4;
 	glm::mat4 cubeTransformMats[NUM_CUBES];
 	glm::mat4 floorTransformMat;
 	const float floorWidth;
 	glm::mat4 lightCubeTransformMat;
-
-	const float ambience;
 
 	UniformSetter uniforms;
 

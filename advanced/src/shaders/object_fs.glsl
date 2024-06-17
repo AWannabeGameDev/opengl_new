@@ -142,18 +142,14 @@ void main()
 	fragColor.rgb += (1.0f - dirLightShadowStrength) * calcDirLight(u_dirLight, diffuseColor.rgb, specularColor.rgb);
 
 	float pointLightShadowStrength = 0.0f;
-
-	for(int i = 0; i < 9; i++)
-	{
-		float closestLightDepth = texture(u_pointLightShadowMap, 
-										  fragWorldCoord - u_pointLight.pos).r;
-		float fragLightDepth = (length(fragWorldCoord - u_pointLight.pos) / u_pointLightFarPlane) + 
+	float closestLightDepth = texture(u_pointLightShadowMap, 
+									  fragWorldCoord - u_pointLight.pos).r;
+	float fragLightDepth = (length(fragWorldCoord - u_pointLight.pos) / u_pointLightFarPlane) + 
 								(0.001f * (1.0f - dot(normal, u_pointLight.pos - fragWorldCoord)));
 
-		if(fragLightDepth > closestLightDepth)
-		{
-			pointLightShadowStrength += 1.0f / 9.0f;
-		}
+	if(fragLightDepth > closestLightDepth)
+	{
+		pointLightShadowStrength = 1.0f;
 	}
 
 	fragColor.rgb += (1.0f - pointLightShadowStrength) * calcPointLight(u_pointLight, diffuseColor.rgb, specularColor.rgb);

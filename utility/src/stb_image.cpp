@@ -6,12 +6,24 @@ TextureData loadTexture(std::string_view path, bool flip)
 {
 	int imWidth, imHeight, imNumChannels;
 	stbi_set_flip_vertically_on_load(flip);
-	unsigned char* imData = stbi_load(path.data(), &imWidth, &imHeight, &imNumChannels, 0);
+	unsigned char* imData = stbi_load(path.data(), &imWidth, &imHeight, &imNumChannels, 3);
 
 	if(imData == nullptr)
 	{
 		printf("Could not load image from %s\n", path.data());
+		return {};
+	}
+	
+	GLenum format;
+
+	if(imNumChannels == 4)
+	{
+		format = GL_RGBA;
+	}
+	else
+	{
+		format = GL_RGB;
 	}
 
-	return {imWidth, imHeight, (unsigned int)(imNumChannels == 3 ? GL_RGB : GL_RGBA), imData};
+	return {imWidth, imHeight, format, imData};
 }

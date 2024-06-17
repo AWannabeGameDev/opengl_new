@@ -9,9 +9,14 @@ outRelease = ..\dependencies\lib\utility\utility_release.lib
 
 #-----------------------------------------------------------------------
 
+CC = ccache g++
+
 srcs = $(foreach dir, $(srcDirs), $(wildcard $(dir)/*.cpp))
+
 depFlags = -MP -MD
 incFlags = $(foreach dir, $(incDirs), -I$(dir))
+
+#------------------------------------------------------------------------
 
 debugOptim = -O0
 releaseOptim = -O2
@@ -28,17 +33,16 @@ releaseObjs = $(patsubst %.cpp, $(releaseIntermDir)/%.o, $(srcs))
 debugDeps = $(patsubst %.cpp, $(debugIntermDir)/%.d, $(srcs))
 releaseDeps = $(patsubst %.cpp, $(releaseIntermDir)/%.d, $(srcs))
 
-#--------------------------------------------------------------------
+#---------------------------------------------------------------------
 
-$(outDebug): objs = $(debugObjs)
-$(outDebug): deps = $(debugDeps)
+debug: compFlags = $(debugCompFlags)
 
-$(outRelease): objs = $(releaseObjs)
-$(outRelease): deps = $(releaseDeps)
+release: compFlags = $(releaseCompFlags)
 
 #---------------------------------------------------------------------
 
-all: gendirs debug release
+.PHONY: debug release gendirs clean
+
 debug: gendirs $(outDebug)
 release: gendirs $(outRelease)
 
@@ -46,21 +50,17 @@ gendirs:
 	@for %%x in ($(srcDirs)) do if not exist $(debugIntermDir)\%%x mkdir $(debugIntermDir)\%%x
 	@for %%x in ($(srcDirs)) do if not exist $(releaseIntermDir)\%%x mkdir $(releaseIntermDir)\%%x
 
-$(outDebug): $(debugObjs)
+define buildLib
 	@echo Building $@
 	@ar rcs -o $@ $^
+endef
 
-$(outRelease): $(releaseObjs)
-	@echo Building $@
-	@ar rcs -o $@ $^
+$(outDebug): $(debugObjs) ; $(buildLib)
+$(outRelease): $(releaseObjs) ; $(buildLib)
 
-$(debugIntermDir)/%.o: %.cpp
+$(debugIntermDir)/%.o $(releaseIntermDir)/%.o: %.cpp
 	@echo Compiling $<
-	@g++ $(debugCompFlags) -c -o $@ $<
-
-$(releaseIntermDir)/%.o: %.cpp
-	@echo Compiling $<
-	@g++ $(releaseCompFlags) -c -o $@ $<
+	@$(CC) $(compFlags) -c -o $@ $<
 
 clean: 
 	@if exist $(intermDir) rmdir /s /q $(intermDir)

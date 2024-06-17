@@ -11,7 +11,7 @@ using namespace models;
 
 void texImageForSkybox(GLenum target, std::string_view path)
 {
-	TextureData skyboxTexData = loadTexture(path, false);
+	TextureData skyboxTexData {loadTexture(path, false)};
 	glTexImage2D(target, 0, GL_SRGB, skyboxTexData.width, skyboxTexData.height, 0, 
 				 skyboxTexData.format, GL_UNSIGNED_BYTE, skyboxTexData.data);
 	stbi_image_free(skyboxTexData.data);
@@ -25,7 +25,7 @@ unsigned int createObjectTexture(std::string_view path, GLenum format)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-	TextureData texData = loadTexture(path, true);
+	TextureData texData {loadTexture(path, true)};
 	glTexImage2D(GL_TEXTURE_2D, 0, format, texData.width, texData.height, 
 				 0, texData.format, GL_UNSIGNED_BYTE, texData.data);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -78,8 +78,8 @@ void Application::initLightStructsAndMatrices()
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
 
 	pointLightRender.source.position = {0.0f, 2.0f, 0.0f};
-	pointLightRender.source.diffuseColor = glm::vec3{1.0f, 0.34f, 0.2f};
-	pointLightRender.source.specularColor = glm::vec3{1.0f, 0.34f, 0.2f};
+	pointLightRender.source.diffuseColor = glm::vec3{0.0f, 0.6f, 0.3f};
+	pointLightRender.source.specularColor = glm::vec3{0.0f, 0.6f, 0.3f};
 	pointLightRender.source.attenConst = 1.0f;
 	pointLightRender.source.attenLin = 0.09f;
 	pointLightRender.source.attenQuad = 0.032f;
@@ -141,7 +141,7 @@ size_t Application::createVBO()
 
 	glm::vec2 floorTexCoords[xysquare::NUM_VERTS] =
 	{
-		{0.0f, 0.0f}, {0.0f, floorWidth / 4}, {floorWidth / 4, floorWidth / 4}, {floorWidth / 4, 0.0f}
+		{0.0f, 0.0f}, {0.0f, floorWidth / 8}, {floorWidth / 8, floorWidth / 8}, {floorWidth / 8, 0.0f}
 	};
 
 	using std::byte;
@@ -226,11 +226,13 @@ void Application::createTextures()
 {
 	cubeDiffuseTexture = createObjectTexture("../res/container_diffuse.png", GL_SRGB);
 	cubeSpecularTexture = createObjectTexture("../res/container_specular.png", GL_RGB);
-	floorDiffuseTexture = createObjectTexture("../res/floor_diffuse.png", GL_SRGB);
+	floorDiffuseTexture = createObjectTexture("../res/brick_diffuse.png", GL_SRGB);
+	floorSpecularTexture = createObjectTexture("../res/brick_specular.png", GL_RGB);
+	floorNormalTexture = createObjectTexture("../res/brick_normal.png", GL_RGB);
 
 	glBindTexture(GL_TEXTURE_2D, floorDiffuseTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glGenTextures(1, &skybox);
 	glActiveTexture(GL_TEXTURE0 + SKYBOX_TEXTURE_UNIT);
@@ -248,12 +250,6 @@ void Application::createTextures()
 	texImageForSkybox(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, "../res/skybox_pos_z.png");
 	texImageForSkybox(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, "../res/skybox_neg_z.png");
 
-	glGenTextures(1, &floorSpecularTexture);
-	glBindTexture(GL_TEXTURE_2D, floorSpecularTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
 	glGenTextures(1, &blackTexture);
 	glBindTexture(GL_TEXTURE_2D, blackTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -264,7 +260,7 @@ void Application::createTextures()
 	glBindTexture(GL_TEXTURE_2D, lightCubeEmissiveTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
 	glGenFramebuffers(1, &textureWriteFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);

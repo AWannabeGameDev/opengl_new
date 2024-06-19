@@ -4,7 +4,7 @@
 
 srcDirs = src
 incDirs = ..\dependencies\include
-libDirs = ..\dependencies\lib "C:\Program^Files^(x86)\Windows^Kits\10\Lib\10.0.22000.0\um\x64"
+libDirs = ..\dependencies\lib "C:\Program^Files^(x86)\Windows^Kits\10\Lib\10.0.26100.0\um\x64"
 intermDir = interms
 
 libFilesDebug = utility\utility_debug.lib GLFW\libglfw3.a Gdi32.lib

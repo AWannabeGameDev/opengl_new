@@ -62,6 +62,7 @@ void Application::addTextureUniforms()
 	uniforms.addUniform(shader, "u_diffuse");
 	uniforms.addUniform(shader, "u_specular");
 	uniforms.addUniform(shader, "u_emissive");
+	uniforms.addUniform(shader, "u_normal");
 	uniforms.addUniform(shader, "u_materialShininess");
 
 	uniforms.addUniform(skyboxShader, "u_skybox");
@@ -153,6 +154,8 @@ size_t Application::createVBO()
 	vboVector.insert(vboVector.end(), (byte*)floorTexCoords, (byte*)floorTexCoords + sizeof(floorTexCoords));
 	vboVector.insert(vboVector.end(), (byte*)cube::normals, (byte*)cube::normals + sizeof(cube::normals));
 	vboVector.insert(vboVector.end(), (byte*)xysquare::normals, (byte*)xysquare::normals + sizeof(xysquare::normals));
+
+	// TODO: ADD TANGENTS TO THIS VBO
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -262,6 +265,12 @@ void Application::createTextures()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
+	glGenTextures(1, &defaultNormalTexture);
+	glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
 	glGenFramebuffers(1, &textureWriteFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
 	glViewport(0, 0, 1, 1);
@@ -273,6 +282,10 @@ void Application::createTextures()
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blackTexture, 0);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, defaultNormalTexture, 0);
+	glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -333,8 +346,6 @@ void Application::setVAOFormatsAndBuffers(size_t vboSize)
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	size_t vertexSize = sizeof(glm::vec3) + sizeof(glm::vec2) + sizeof(glm::vec3);
-
 	glVertexAttribFormat(VERTEX_POS_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
 	glEnableVertexAttribArray(VERTEX_POS_ATTRIB_INDEX);
 	glBindVertexBuffer(OBJ_POS_BUFFER_BINDING, vbo, 0, sizeof(glm::vec3));
@@ -342,14 +353,22 @@ void Application::setVAOFormatsAndBuffers(size_t vboSize)
 	glVertexAttribFormat(VERTEX_TEXCOORD_ATTRIB_INDEX, 2, GL_FLOAT, GL_FALSE, 0);
 	glEnableVertexAttribArray(VERTEX_TEXCOORD_ATTRIB_INDEX);
 	glBindVertexBuffer(OBJ_TEXCOORD_BUFFER_BINDING, vbo, 
-					   (size_t)(vboSize * sizeof(glm::vec3) / vertexSize), sizeof(glm::vec2));
+					   (size_t)(vboSize * VERTEX_POS_SIZE / VERTEX_TOTAL_SIZE), 
+					   sizeof(glm::vec2));
 
 	glVertexAttribFormat(VERTEX_NORMAL_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
 	glEnableVertexAttribArray(VERTEX_NORMAL_ATTRIB_INDEX);
 	glBindVertexBuffer(OBJ_NORMAL_BUFFER_BINDING, vbo, 
-					   (size_t)(vboSize * (sizeof(glm::vec3) + sizeof(glm::vec2)) / vertexSize),
+					   (size_t)(vboSize * (VERTEX_POS_SIZE + VERTEX_TEXCOORD_SIZE) / VERTEX_TOTAL_SIZE),
 					   sizeof(glm::vec3));
 	glVertexAttribBinding(VERTEX_NORMAL_ATTRIB_INDEX, OBJ_NORMAL_BUFFER_BINDING);
+
+	glVertexAttribFormat(VERTEX_TANGENT_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
+	glEnableVertexAttribArray(VERTEX_TANGENT_ATTRIB_INDEX);
+	glBindVertexBuffer(OBJ_TANGENT_BUFFER_BINDING, vbo, 
+					   (size_t)(vboSize * (VERTEX_POS_SIZE + VERTEX_TEXCOORD_SIZE + VERTEX_NORMAL_SIZE) / VERTEX_TOTAL_SIZE),
+					   sizeof(glm::vec3));
+	glVertexAttribBinding(VERTEX_TANGENT_ATTRIB_INDEX, OBJ_TANGENT_BUFFER_BINDING);
 
 	glBindVertexBuffer(OBJ_TRANSMAT_BUFFER_BINDING, instanceVBO, 0, sizeof(glm::mat4));
 	glVertexBindingDivisor(OBJ_TRANSMAT_BUFFER_BINDING, 1);
@@ -362,6 +381,27 @@ void Application::setVAOFormatsAndBuffers(size_t vboSize)
 
 	glBindVertexBuffer(FB_POS_BUFFER_BINDING, fbQuadVBO, 0, sizeof(glm::vec3));
 	glBindVertexBuffer(FB_TEXCOORD_BUFFER_BINDING, fbQuadVBO, 4 * sizeof(glm::vec3), sizeof(glm::vec2));
+}
+
+void Application::setUniforms()
+{
+	glUseProgram(shader);
+	setDirLightUniform(uniforms, shader, "u_dirLight", dirLightRender.source); // Should be done in render loop if dynamic
+	setPointLightUniform(uniforms, shader, "u_pointLight", pointLightRender.source); // Should be done in 
+																					 // render loop if dynamic
+	uniforms.setUniform(shader, "u_ambience", ambience);
+	uniforms.setUniform(shader, "u_diffuse", DIFFUSE_TEXTURE_UNIT);   // These four can
+	uniforms.setUniform(shader, "u_specular", SPECULAR_TEXTURE_UNIT); // have texture-arrays
+	uniforms.setUniform(shader, "u_emissive", EMISSIVE_TEXTURE_UNIT); // of the same size
+	uniforms.setUniform(shader, "u_normal", NORMAL_TEXTURE_UNIT);
+	uniforms.setUniform(shader, "u_dirLightShadowMap", SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
+	uniforms.setUniform(shader, "u_pointLightShadowMap", SHADOW_MAP_TEXTURE_UNIT + 1); // Texture-arrays probably
+
+	glUseProgram(skyboxShader);
+	uniforms.setUniform(skyboxShader, "u_skybox", SKYBOX_TEXTURE_UNIT);
+
+	glUseProgram(fbShader);
+	uniforms.setUniform(fbShader, "fbTexture", FB_COLOR_TEXTURE_UNIT);
 }
 
 Application::Application() :
@@ -414,22 +454,7 @@ Application::Application() :
 
 	setVAOFormatsAndBuffers(vboSize);
 
-	glUseProgram(shader);
-	setDirLightUniform(uniforms, shader, "u_dirLight", dirLightRender.source); // Should be done in render loop if dynamic
-	setPointLightUniform(uniforms, shader, "u_pointLight", pointLightRender.source); // Should be done in 
-																					 // render loop if dynamic
-	uniforms.setUniform(shader, "u_ambience", ambience);
-	uniforms.setUniform(shader, "u_diffuse", DIFFUSE_TEXTURE_UNIT);   // These three can
-	uniforms.setUniform(shader, "u_specular", SPECULAR_TEXTURE_UNIT); // have texture-arrays
-	uniforms.setUniform(shader, "u_emissive", EMISSIVE_TEXTURE_UNIT); // of the same size
-	uniforms.setUniform(shader, "u_dirLightShadowMap", SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
-	uniforms.setUniform(shader, "u_pointLightShadowMap", SHADOW_MAP_TEXTURE_UNIT + 1); // Texture-arrays probably
-
-	glUseProgram(skyboxShader);
-	uniforms.setUniform(skyboxShader, "u_skybox", SKYBOX_TEXTURE_UNIT);
-
-	glUseProgram(fbShader);
-	uniforms.setUniform(fbShader, "fbTexture", FB_COLOR_TEXTURE_UNIT);
+	setUniforms();
 }
 
 Application::~Application()
@@ -582,6 +607,8 @@ void Application::run()
 		glBindTexture(GL_TEXTURE_2D, cubeDiffuseTexture);
 		glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, cubeSpecularTexture);
+		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
+		glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
 
 		uniforms.setUniform(shader, "u_materialShininess", cubeShininess);
 		glDrawElementsInstanced(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, NUM_CUBES);
@@ -592,6 +619,8 @@ void Application::run()
 		glBindTexture(GL_TEXTURE_2D, blackTexture);
 		glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, blackTexture);
+		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
+		glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
 
 		glDrawElementsInstancedBaseInstance(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, 1, NUM_CUBES);
 
@@ -601,6 +630,8 @@ void Application::run()
 		glBindTexture(GL_TEXTURE_2D, floorDiffuseTexture);
 		glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, floorSpecularTexture);
+		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
+		glBindTexture(GL_TEXTURE_2D, floorNormalTexture);
 
 		uniforms.setUniform(shader, "u_materialShininess", floorShininess);
 		glDisable(GL_CULL_FACE);

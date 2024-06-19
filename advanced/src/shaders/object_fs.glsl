@@ -1,5 +1,7 @@
 #version 460 core
 
+// TODO: UPDATE FOR WORKING WITH NORMAL MAP AND TBN MATRIX
+
 struct DirectionalLight
 {
 	vec3 dirNormalized;
@@ -26,13 +28,14 @@ struct ConeLight
 };	
 
 in vec2 texCoord;
-in vec3 normal;
+in mat3 TBNMatrix;
 in vec3 fragWorldCoord;
 in vec4 fragDirLightSpaceCoord;
 
 uniform sampler2D u_diffuse;
 uniform sampler2D u_specular;
 uniform sampler2D u_emissive;
+uniform sampler2D u_normal;
 uniform float u_materialShininess;
 
 uniform DirectionalLight u_dirLight;

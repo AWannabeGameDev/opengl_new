@@ -6,7 +6,7 @@ TextureData loadTexture(std::string_view path, bool flip)
 {
 	int imWidth, imHeight, imNumChannels;
 	stbi_set_flip_vertically_on_load(flip);
-	unsigned char* imData = stbi_load(path.data(), &imWidth, &imHeight, &imNumChannels, 3);
+	unsigned char* imData = stbi_load(path.data(), &imWidth, &imHeight, &imNumChannels, 4);
 
 	if(imData == nullptr)
 	{
@@ -14,16 +14,7 @@ TextureData loadTexture(std::string_view path, bool flip)
 		return {};
 	}
 	
-	GLenum format;
-
-	if(imNumChannels == 4)
-	{
-		format = GL_RGBA;
-	}
-	else
-	{
-		format = GL_RGB;
-	}
+	GLenum format = GL_RGBA;
 
 	return {imWidth, imHeight, format, imData};
 }

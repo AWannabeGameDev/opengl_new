@@ -73,7 +73,8 @@ gendirs:
 	@for %%x in ($(srcDirs)) do if not exist $(releaseIntermDir)\%%x mkdir $(releaseIntermDir)\%%x
 
 define buildExecutable
-	if NOT "$(strip $(filter-out $(subProjDeps), $?))" == "" echo Building $@ && $(CC) $(linkFlags) -o $@ $(filter-out $(subProjDeps), $^) $(libFilesFlag)
+	@echo Building $@
+	@$(CC) $(linkFlags) -o $@ $(filter-out $(subProjDeps), $^) $(libFilesFlag)
 endef 
 
 $(outDebug): $(subProjDeps) $(debugObjs) ; $(buildExecutable)

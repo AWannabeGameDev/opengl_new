@@ -1,4 +1,4 @@
-interms\\debug/src/application.o: src/application.cpp src/application.h \
+interms\debug/src/application.o: src/application.cpp src/application.h \
  ..\dependencies\include/utility/util.h \
  ..\dependencies\include/glad/glad.h \
  ..\dependencies\include/KHR/khrplatform.h \

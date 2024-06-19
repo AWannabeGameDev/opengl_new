@@ -1,4 +1,4 @@
-interms\\debug/src/stb_image.o: src/stb_image.cpp \
+interms\debug/src/stb_image.o: src/stb_image.cpp \
  ..\dependencies\include/utility/stb_image.h \
  C:/mingw64/x86_64-w64-mingw32/include/stdio.h \
  C:/mingw64/x86_64-w64-mingw32/include/corecrt_stdio_config.h \

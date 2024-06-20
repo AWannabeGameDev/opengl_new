@@ -140,6 +140,13 @@ size_t Application::createVBO()
 		{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}
 	};
 
+	glm::vec3 cubeTangets[cube::NUM_VERTS] =
+	{
+		{0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
+		{0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
+		// FINISH THIS
+	};
+
 	glm::vec2 floorTexCoords[xysquare::NUM_VERTS] =
 	{
 		{0.0f, 0.0f}, {0.0f, floorWidth / 8}, {floorWidth / 8, floorWidth / 8}, {floorWidth / 8, 0.0f}

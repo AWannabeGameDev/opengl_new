@@ -59,11 +59,6 @@ namespace models
 			{0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, -1.0f}
 		};
 
-		inline constexpr glm::vec3 tangents[NUM_VERTS] =
-		{
-			
-		};
-
 		inline constexpr unsigned int indices[NUM_INDICES] =
 		{
 			// upper-left triangle                 // lower-right triangle

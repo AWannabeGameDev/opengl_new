@@ -8,6 +8,7 @@
         "fstream": "cpp",
         "new": "cpp",
         "stdarg.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "functional": "cpp"
     }
 }

@@ -16,7 +16,8 @@ subProjDeps = utility
 outDebug = bin\advanced_debug.exe
 outRelease = bin\advanced_release.exe
 
-preDefines = 
+preDefinesDebug = _DEBUG
+preDefinesRelease =  
 
 #-----------------------------------------------------------------------
 
@@ -28,10 +29,12 @@ srcs = $(foreach dir, $(srcDirs), $(wildcard $(dir)/*.cpp))
 
 depFlags = -MP -MD
 incFlags = $(foreach dir, $(incDirs), -I$(dir))
-preDefFlags = $(foreach def, $(preDefines), -D$(def))
 linkFlags = $(foreach dir, $(libDirs), $(subst ^, $(empty), -L$(dir)))
 
 #------------------------------------------------------------------------
+
+preDefDebugFlags = $(foreach def, $(preDefinesDebug), -D$(def))
+preDefReleaseFlags = $(foreach def, $(preDefinesRelease), -D$(def))
 
 libFilesDebugFlag = $(foreach file, $(libFilesDebug), -l:$(file))
 libFilesReleaseFlag = $(foreach file, $(libFilesRelease), -l:$(file))
@@ -39,8 +42,8 @@ libFilesReleaseFlag = $(foreach file, $(libFilesRelease), -l:$(file))
 debugOptim = -O0
 releaseOptim = -O2
 
-debugCompFlags = -g $(incFlags) $(preDefFlags) $(debugOptim) $(depFlags) -std=c++20
-releaseCompFlags = $(incFlags) $(preDefFlags) $(releaseOptim) $(depFlags) -std=c++20
+debugCompFlags = -g $(incFlags) $(preDefDebugFlags) $(debugOptim) $(depFlags) -std=c++20
+releaseCompFlags = $(incFlags) $(preDefReleaseFlags) $(releaseOptim) $(depFlags) -std=c++20
 
 debugIntermDir = $(intermDir)\debug
 releaseIntermDir = $(intermDir)\release

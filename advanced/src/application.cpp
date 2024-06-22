@@ -72,18 +72,18 @@ void Application::addTextureUniforms()
 void Application::initLightStructsAndMatrices()
 {
 	dirLightRender.source.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
-	dirLightRender.source.diffuseColor = glm::vec3{0.8f, 0.8f, 0.8f};
-	dirLightRender.source.specularColor = glm::vec3{0.2f, 0.2f, 0.2f};
+	dirLightRender.source.diffuseColor = glm::vec3{0.7f, 0.7f, 0.7f};
+	dirLightRender.source.specularColor = glm::vec3{0.1f, 0.1f, 0.1f};
 
 	dirLightRender.matrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
 
 	pointLightRender.source.position = {0.0f, 2.0f, 0.0f};
-	pointLightRender.source.diffuseColor = glm::vec3{0.0f, 0.6f, 0.3f};
-	pointLightRender.source.specularColor = glm::vec3{0.0f, 0.6f, 0.3f};
+	pointLightRender.source.diffuseColor = glm::vec3{1.0f, 1.0f, 1.0f};
+	pointLightRender.source.specularColor = glm::vec3{0.4f, 0.4f, 0.4f};
 	pointLightRender.source.attenConst = 1.0f;
-	pointLightRender.source.attenLin = 0.09f;
-	pointLightRender.source.attenQuad = 0.032f;
+	pointLightRender.source.attenLin = 0.045f;
+	pointLightRender.source.attenQuad = 0.0075f;
 
 	pointLightRender.farPlane = 20.0f;
 	pointLightRender.projMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, pointLightRender.farPlane);
@@ -132,24 +132,33 @@ size_t Application::createVBO()
 {
 	glm::vec2 cubeTexCoords[cube::NUM_VERTS] =
 	{
-		{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f},
-		{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f},
-		{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f},
-		{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f},
-		{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f},
-		{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}
 	};
 
 	glm::vec3 cubeTangets[cube::NUM_VERTS] =
 	{
-		{0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
-		{0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
-		// FINISH THIS
+		{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
+		{-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
+		{-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
+		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}
 	};
 
 	glm::vec2 floorTexCoords[xysquare::NUM_VERTS] =
 	{
-		{0.0f, 0.0f}, {0.0f, floorWidth / 8}, {floorWidth / 8, floorWidth / 8}, {floorWidth / 8, 0.0f}
+		//{floorWidth / 8, floorWidth / 8}, {0.0f, floorWidth / 8}, {0.0f, 0.0f}, {floorWidth / 8, 0.0f}
+		{floorWidth / 16.0f, floorWidth / 16.0f}, {0.0f, floorWidth / 16.0f}, {0.0f, 0.0f}, {floorWidth / 16.0f, 0.0f}
+	};
+
+	glm::vec3 floorTangents[xysquare::NUM_VERTS] =
+	{
+		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}
 	};
 
 	using std::byte;
@@ -161,8 +170,8 @@ size_t Application::createVBO()
 	vboVector.insert(vboVector.end(), (byte*)floorTexCoords, (byte*)floorTexCoords + sizeof(floorTexCoords));
 	vboVector.insert(vboVector.end(), (byte*)cube::normals, (byte*)cube::normals + sizeof(cube::normals));
 	vboVector.insert(vboVector.end(), (byte*)xysquare::normals, (byte*)xysquare::normals + sizeof(xysquare::normals));
-
-	// TODO: ADD TANGENTS TO THIS VBO
+	vboVector.insert(vboVector.end(), (byte*)cubeTangets, (byte*)cubeTangets + sizeof(cubeTangets));
+	vboVector.insert(vboVector.end(), (byte*)floorTangents, (byte*)floorTangents + sizeof(floorTangents));
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -266,6 +275,12 @@ void Application::createTextures()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
+	glGenTextures(1, &whiteTexture);
+	glBindTexture(GL_TEXTURE_2D, whiteTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
 	glGenTextures(1, &lightCubeEmissiveTexture);
 	glBindTexture(GL_TEXTURE_2D, lightCubeEmissiveTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -291,8 +306,12 @@ void Application::createTextures()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, whiteTexture, 0);
+	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, defaultNormalTexture, 0);
-	glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
+	glClearColor(0.5f, 0.5f, 1.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -353,15 +372,20 @@ void Application::setVAOFormatsAndBuffers(size_t vboSize)
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
+	glBindVertexBuffer(FB_POS_BUFFER_BINDING, fbQuadVBO, 0, sizeof(glm::vec3));
+	glBindVertexBuffer(FB_TEXCOORD_BUFFER_BINDING, fbQuadVBO, 4 * sizeof(glm::vec3), sizeof(glm::vec2));
+
 	glVertexAttribFormat(VERTEX_POS_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
 	glEnableVertexAttribArray(VERTEX_POS_ATTRIB_INDEX);
 	glBindVertexBuffer(OBJ_POS_BUFFER_BINDING, vbo, 0, sizeof(glm::vec3));
+	// AttribBinding done in render loop
 
 	glVertexAttribFormat(VERTEX_TEXCOORD_ATTRIB_INDEX, 2, GL_FLOAT, GL_FALSE, 0);
 	glEnableVertexAttribArray(VERTEX_TEXCOORD_ATTRIB_INDEX);
 	glBindVertexBuffer(OBJ_TEXCOORD_BUFFER_BINDING, vbo, 
 					   (size_t)(vboSize * VERTEX_POS_SIZE / VERTEX_TOTAL_SIZE), 
 					   sizeof(glm::vec2));
+	// AttribBinding done in render loop
 
 	glVertexAttribFormat(VERTEX_NORMAL_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
 	glEnableVertexAttribArray(VERTEX_NORMAL_ATTRIB_INDEX);
@@ -382,12 +406,9 @@ void Application::setVAOFormatsAndBuffers(size_t vboSize)
 	for(int i = 0; i < 4; i++)
 	{
 		glVertexAttribFormat(i + VERTEX_TRANSMAT_ATTRIB_INDEX, 4, GL_FLOAT, GL_FALSE, i * sizeof(glm::vec4));
-		glVertexAttribBinding(i + VERTEX_TRANSMAT_ATTRIB_INDEX, 4);
+		glVertexAttribBinding(i + VERTEX_TRANSMAT_ATTRIB_INDEX, OBJ_TRANSMAT_BUFFER_BINDING);
 		glEnableVertexAttribArray(i + VERTEX_TRANSMAT_ATTRIB_INDEX);
 	}
-
-	glBindVertexBuffer(FB_POS_BUFFER_BINDING, fbQuadVBO, 0, sizeof(glm::vec3));
-	glBindVertexBuffer(FB_TEXCOORD_BUFFER_BINDING, fbQuadVBO, 4 * sizeof(glm::vec3), sizeof(glm::vec2));
 }
 
 void Application::setUniforms()

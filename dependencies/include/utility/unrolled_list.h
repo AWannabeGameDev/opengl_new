@@ -21,9 +21,16 @@ private:
 		m_Arena* next;
 	};
 
-	size_t m_size; size_t m_capacity;
-	m_Arena* m_headArena; m_Arena* m_lastArena;
-	m_Node* m_stackPtr; m_Node m_headNode; m_Node* m_lastNode; m_Node* m_virtualLastNode;
+	size_t m_size; 
+	size_t m_capacity;
+
+	m_Arena* m_headArena; 
+	m_Arena* m_lastArena;
+
+	m_Node* m_stackPtr; 
+	m_Node m_headNode; 
+	m_Node* m_lastNode; 
+	m_Node* m_virtualLastNode;
 
 	void f_setLastNode() 
 	{
@@ -31,7 +38,7 @@ private:
 		{
 			if(m_size == m_capacity) 
 			{
-				m_lastArena->next = new m_Arena{(m_Node*)::operator new(m_capacity * sizeof(m_Node)), 2 * m_capacity,nullptr};
+				m_lastArena->next = new m_Arena{(m_Node*)::operator new(m_capacity * sizeof(m_Node)), 2 * m_capacity, nullptr};
 				m_lastArena = m_lastArena->next;
 				m_stackPtr = m_lastArena->start;
 

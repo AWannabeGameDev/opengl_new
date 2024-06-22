@@ -89,7 +89,7 @@ private :
 	unsigned int matsUBO;
 	const unsigned int matsUniformBinding;
 
-	unsigned int blackTexture, defaultNormalTexture;
+	unsigned int blackTexture, whiteTexture, defaultNormalTexture;
 	unsigned int skybox;
 	unsigned int textureWriteFBO;
 	unsigned int cubeDiffuseTexture, floorDiffuseTexture;

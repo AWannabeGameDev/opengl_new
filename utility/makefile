@@ -7,6 +7,9 @@ intermDir = interms
 outDebug = ..\dependencies\lib\utility\utility_debug.lib
 outRelease = ..\dependencies\lib\utility\utility_release.lib
 
+preDefinesDebug = _DEBUG
+predefinesRelease = 
+
 #-----------------------------------------------------------------------
 
 CC = ccache g++
@@ -18,11 +21,14 @@ incFlags = $(foreach dir, $(incDirs), -I$(dir))
 
 #------------------------------------------------------------------------
 
+preDefDebugFlags = $(foreach def, $(preDefinesDebug), -D$(def))
+preDefReleaseFlags = $(foreach def, $(preDefinesRelease), -D$(def))
+
 debugOptim = -O0
 releaseOptim = -O2
 
-debugCompFlags = -g $(incFlags) $(debugOptim) $(depFlags) -std=c++20
-releaseCompFlags = $(incFlags) $(releaseOptim) $(depFlags) -std=c++20
+debugCompFlags = -g $(preDefDebugFlags) $(incFlags) $(debugOptim) $(depFlags) -std=c++20
+releaseCompFlags = $(preDefReleaseFlags) $(incFlags) $(releaseOptim) $(depFlags) -std=c++20
 
 debugIntermDir = $(intermDir)\debug
 releaseIntermDir = $(intermDir)\release

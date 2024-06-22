@@ -27,7 +27,7 @@ void main()
 	texCoord = v_texCoord;
 	fragDirLightSpaceCoord = u_dirLightSpaceMatrix * vec4(fragWorldCoord, 1.0f);
 
-	mat3 normalTransMatrix = mat3(transpose(inverse(v_model)))
+	mat3 normalTransMatrix = mat3(transpose(inverse(v_model)));
 	vec3 normal = normalTransMatrix * v_normal;
 	vec3 tangent = normalTransMatrix * v_tangent;
 	vec3 bitangent = cross(normal, tangent);

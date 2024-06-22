@@ -1,7 +1,5 @@
 #version 460 core
 
-// TODO: UPDATE FOR WORKING WITH NORMAL MAP AND TBN MATRIX
-
 struct DirectionalLight
 {
 	vec3 dirNormalized;
@@ -48,6 +46,8 @@ uniform samplerCube u_pointLightShadowMap;
 uniform float u_pointLightFarPlane;
 
 out vec4 fragColor;
+
+vec3 normal = normalize(TBNMatrix * ((2.0f * texture(u_normal, texCoord).xyz) - vec3(1.0f)));
 
 vec3 calcDirLight(DirectionalLight light, vec3 diffuseFragColor, vec3 specularFragColor)
 {
@@ -131,10 +131,11 @@ void main()
 
 	for(int i = 0; i < 9; i++)
 	{
-		float closestLightDepth = texture(u_dirLightShadowMap, 
-										  (fragDirLightSpaceCoord.xy * 0.5f) + vec2(0.5f) + shadowSampleOffsets[i]).r;
-		float fragLightDepth = ((fragDirLightSpaceCoord.z * 0.5f) + 0.5f) - 
-								(0.001f * (1.0f - dot(normal, -u_dirLight.dirNormalized)));
+		float depthBias = 0.001f * (1.0f - dot(normal, -u_dirLight.dirNormalized));
+		vec2 shadowSampleTexCoord = (fragDirLightSpaceCoord.xy * 0.5f) + vec2(0.5f) + shadowSampleOffsets[i];
+
+		float closestLightDepth = texture(u_dirLightShadowMap, shadowSampleTexCoord).r;
+		float fragLightDepth = ((fragDirLightSpaceCoord.z * 0.5f) + 0.5f) - depthBias;
 
 		if(fragLightDepth > closestLightDepth)
 		{
@@ -144,11 +145,12 @@ void main()
 
 	fragColor.rgb += (1.0f - dirLightShadowStrength) * calcDirLight(u_dirLight, diffuseColor.rgb, specularColor.rgb);
 
+	vec3 shadowSampleTexCoord = fragWorldCoord - u_pointLight.pos;
+	float depthBias = 0.001f * (1.0f - dot(normal, normalize(-shadowSampleTexCoord)));
+	
 	float pointLightShadowStrength = 0.0f;
-	float closestLightDepth = texture(u_pointLightShadowMap, 
-									  fragWorldCoord - u_pointLight.pos).r;
-	float fragLightDepth = (length(fragWorldCoord - u_pointLight.pos) / u_pointLightFarPlane) + 
-								(0.001f * (1.0f - dot(normal, u_pointLight.pos - fragWorldCoord)));
+	float closestLightDepth = texture(u_pointLightShadowMap, shadowSampleTexCoord).r;
+	float fragLightDepth = (length(shadowSampleTexCoord) / u_pointLightFarPlane) - depthBias;
 
 	if(fragLightDepth > closestLightDepth)
 	{

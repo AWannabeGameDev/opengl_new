@@ -24,6 +24,12 @@ struct DirectionalLightRender
 	DirectionalLight source;
 };
 
+struct TextureParameterSet
+{
+	unsigned int minFilter, magFilter;
+	unsigned int texWrapS, texWrapT, texWrapR;
+};
+
 class Application
 {
 private :
@@ -39,7 +45,7 @@ private :
 	void initObjectTransforms();
 	void createObjectTransformVBO();
 	void createMatrixUBO();
-	void createTextures();
+	void createTextureMaps();
 
 	void createPostProcessFBO();
 
@@ -87,8 +93,9 @@ private :
 	unsigned int vao, vbo, ebo;
 	unsigned int instanceVBO;
 	unsigned int matsUBO;
-	const unsigned int matsUniformBinding;
+	unsigned int matsUniformBinding;
 
+	TextureParameterSet defaultTexParams;
 	unsigned int blackTexture, whiteTexture, defaultNormalTexture;
 	unsigned int skybox;
 	unsigned int textureWriteFBO;
@@ -100,7 +107,7 @@ private :
 
 	DirectionalLightRender dirLightRender;
 	PointLightRender pointLightRender;
-	const float ambience;
+	float ambience;
 	static constexpr int SHADOW_MAP_WIDTH = 1024,
 						 SHADOW_MAP_HEIGHT = 1024;
 
@@ -118,7 +125,7 @@ private :
 	static constexpr int NUM_CUBES = 4;
 	glm::mat4 cubeTransformMats[NUM_CUBES];
 	glm::mat4 floorTransformMat;
-	const float floorWidth;
+	float floorWidth;
 	glm::mat4 lightCubeTransformMat;
 
 	UniformSetter uniforms;

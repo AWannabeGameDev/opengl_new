@@ -9,27 +9,74 @@
 
 using namespace models;
 
-void texImageForSkybox(GLenum target, std::string_view path)
-{
-	TextureData skyboxTexData {loadTexture(path, false)};
-	glTexImage2D(target, 0, GL_SRGB, skyboxTexData.width, skyboxTexData.height, 0, 
-				 skyboxTexData.format, GL_UNSIGNED_BYTE, skyboxTexData.data);
-	stbi_image_free(skyboxTexData.data);
-}
-
-unsigned int createObjectTexture(std::string_view path, GLenum format)
+unsigned int createTexture(unsigned int target, const TextureParameterSet& texParams, 
+						   unsigned int format, std::string_view path, bool flip, 
+						   int width = 0, int height = 0)
 {
 	unsigned int texID;
 	glGenTextures(1, &texID);
-	glBindTexture(GL_TEXTURE_2D, texID);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glBindTexture(target, texID);
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, texParams.texWrapS);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, texParams.texWrapT);
+	glTexParameteri(target, GL_TEXTURE_WRAP_R, texParams.texWrapR);
 
-	TextureData texData {loadTexture(path, true)};
-	glTexImage2D(GL_TEXTURE_2D, 0, format, texData.width, texData.height, 
-				 0, texData.format, GL_UNSIGNED_BYTE, texData.data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	stbi_image_free(texData.data);
+	if((width == 0) && (height == 0))
+	{
+		TextureData texInfo{loadTexture(path, flip)};
+		glTexImage2D(target, 0, format, texInfo.width, texInfo.height, 0, texInfo.format, GL_UNSIGNED_BYTE, texInfo.data);
+		stbi_image_free(texInfo.data);
+	}
+	else
+	{
+		glTexImage2D(target, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+	}
+
+	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
+	{
+		glGenerateMipmap(target);
+	}
+
+	return texID;
+}
+
+unsigned int createCubemap(const TextureParameterSet& texParams, 
+						   unsigned int format, std::string_view paths[6], bool flip,
+						   int width = 0, int height = 0)
+{
+	unsigned int texID;
+	glGenTextures(1, &texID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, texParams.texWrapS);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, texParams.texWrapT);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, texParams.texWrapR);
+
+	if((width == 0) && (height == 0))
+	{
+		for(size_t i = 0; i < 6; i++)
+		{
+			TextureData texInfo{loadTexture(paths[i], flip)};
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, 
+						 texInfo.width, texInfo.height, 0, texInfo.format, GL_UNSIGNED_BYTE, texInfo.data);
+			stbi_image_free(texInfo.data);
+		}
+	}
+	else
+	{
+		for(unsigned int i = 0; i < 6; i++)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, 
+						 width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+		}
+	}
+
+	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
+	{
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	}
 
 	return texID;
 }
@@ -71,16 +118,18 @@ void Application::addTextureUniforms()
 
 void Application::initLightStructsAndMatrices()
 {
+	ambience = 0.1f;
+
 	dirLightRender.source.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
 	dirLightRender.source.diffuseColor = glm::vec3{0.7f, 0.7f, 0.7f};
-	dirLightRender.source.specularColor = glm::vec3{0.1f, 0.1f, 0.1f};
+	dirLightRender.source.specularColor = glm::vec3{0.5f, 0.5f, 0.5f};
 
 	dirLightRender.matrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
 
 	pointLightRender.source.position = {0.0f, 2.0f, 0.0f};
-	pointLightRender.source.diffuseColor = glm::vec3{1.0f, 1.0f, 1.0f};
-	pointLightRender.source.specularColor = glm::vec3{0.4f, 0.4f, 0.4f};
+	pointLightRender.source.diffuseColor = 0.0f * glm::vec3{0.0f, 1.0f, 1.0f};
+	pointLightRender.source.specularColor = 0.0f * glm::vec3{0.0f, 0.4f, 0.4f};
 	pointLightRender.source.attenConst = 1.0f;
 	pointLightRender.source.attenLin = 0.045f;
 	pointLightRender.source.attenQuad = 0.0075f;
@@ -109,23 +158,17 @@ void Application::initLightStructsAndMatrices()
 
 void Application::createLightShadowMaps()
 {
-	glGenTextures(1, &dirLightRender.shadowMap);
-	glBindTexture(GL_TEXTURE_2D, dirLightRender.shadowMap);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT,
-				 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	TextureParameterSet shadowMapParams;
+	shadowMapParams.minFilter = GL_LINEAR;
+	shadowMapParams.magFilter = GL_LINEAR;
+	shadowMapParams.texWrapS = GL_CLAMP_TO_BORDER;
+	shadowMapParams.texWrapT = GL_CLAMP_TO_BORDER;
+	shadowMapParams.texWrapR = GL_CLAMP_TO_BORDER;
 
-	glGenTextures(1, &pointLightRender.shadowCubeMap);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, pointLightRender.shadowCubeMap);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	for(int face = GL_TEXTURE_CUBE_MAP_POSITIVE_X; face <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; face++)
-	{
-		glTexImage2D(face, 0, GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 
-					 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-	}
+	dirLightRender.shadowMap = createTexture(GL_TEXTURE_2D, shadowMapParams, GL_DEPTH_COMPONENT, "", false, 
+											 SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+	pointLightRender.shadowCubeMap = createCubemap(shadowMapParams, GL_DEPTH_COMPONENT, {}, false, 
+												   SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
 }
 
 size_t Application::createVBO()
@@ -153,7 +196,7 @@ size_t Application::createVBO()
 	glm::vec2 floorTexCoords[xysquare::NUM_VERTS] =
 	{
 		//{floorWidth / 8, floorWidth / 8}, {0.0f, floorWidth / 8}, {0.0f, 0.0f}, {floorWidth / 8, 0.0f}
-		{floorWidth / 16.0f, floorWidth / 16.0f}, {0.0f, floorWidth / 16.0f}, {0.0f, 0.0f}, {floorWidth / 16.0f, 0.0f}
+		{floorWidth / 8.0f, floorWidth / 8.0f}, {0.0f, floorWidth / 8.0f}, {0.0f, 0.0f}, {floorWidth / 8.0f, 0.0f}
 	};
 
 	glm::vec3 floorTangents[xysquare::NUM_VERTS] =
@@ -195,6 +238,8 @@ void Application::createEBO()
 
 void Application::initObjectTransforms()
 {
+	floorWidth = 20.0f;
+
 	srand((unsigned int)time(0));
 	for(glm::mat4& cubeTransformMat : cubeTransformMats)
 	{
@@ -232,6 +277,8 @@ void Application::createObjectTransformVBO()
 
 void Application::createMatrixUBO()
 {
+	matsUniformBinding = 0;
+
 	glGenBuffers(1, &matsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, matsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
@@ -241,57 +288,51 @@ void Application::createMatrixUBO()
 	glBindBufferBase(GL_UNIFORM_BUFFER, matsUniformBinding, matsUBO);
 }
 
-void Application::createTextures()
+void Application::createTextureMaps()
 {
-	cubeDiffuseTexture = createObjectTexture("../res/container_diffuse.png", GL_SRGB);
-	cubeSpecularTexture = createObjectTexture("../res/container_specular.png", GL_RGB);
-	floorDiffuseTexture = createObjectTexture("../res/brick_diffuse.png", GL_SRGB);
-	floorSpecularTexture = createObjectTexture("../res/brick_specular.png", GL_RGB);
-	floorNormalTexture = createObjectTexture("../res/brick_normal.png", GL_RGB);
+	cubeShininess = 128.0f; 
+	floorShininess = 32.0f;
 
-	glBindTexture(GL_TEXTURE_2D, floorDiffuseTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	TextureParameterSet texParams;
+	texParams.minFilter = GL_LINEAR_MIPMAP_LINEAR;
+	texParams.magFilter = GL_LINEAR;
+	texParams.texWrapS = GL_REPEAT;
+	texParams.texWrapT = GL_REPEAT;
+	texParams.texWrapR = GL_REPEAT;
 
-	glGenTextures(1, &skybox);
+	cubeDiffuseTexture = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/container_diffuse.png", true);
+	cubeSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/container_specular.png", true);
+	floorDiffuseTexture = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/brick_diffuse.png", true);
+	floorSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_specular.png", true);
+	floorNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_normal.png", true);
+
+	texParams.minFilter = GL_LINEAR;
+	texParams.magFilter = GL_LINEAR;
+	texParams.texWrapS = GL_CLAMP_TO_EDGE;
+	texParams.texWrapT = GL_CLAMP_TO_EDGE;
+	texParams.texWrapR = GL_CLAMP_TO_EDGE;
+
+	std::string_view skyboxPaths[6]
+	{
+		"../res/skybox_pos_x.png", "../res/skybox_neg_x.png",
+		"../res/skybox_pos_y.png", "../res/skybox_neg_y.png",
+		"../res/skybox_pos_z.png", "../res/skybox_neg_z.png"
+	};
+
+	skybox = createCubemap(texParams, GL_SRGB, skyboxPaths, false);
 	glActiveTexture(GL_TEXTURE0 + SKYBOX_TEXTURE_UNIT);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	texImageForSkybox(GL_TEXTURE_CUBE_MAP_POSITIVE_X, "../res/skybox_pos_x.png");
-	texImageForSkybox(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, "../res/skybox_neg_x.png");
-	texImageForSkybox(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, "../res/skybox_pos_y.png");
-	texImageForSkybox(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, "../res/skybox_neg_y.png");
-	texImageForSkybox(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, "../res/skybox_pos_z.png");
-	texImageForSkybox(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, "../res/skybox_neg_z.png");
+	texParams.minFilter = GL_NEAREST;
+	texParams.magFilter = GL_NEAREST;
+	texParams.texWrapS = GL_REPEAT;
+	texParams.texWrapT = GL_REPEAT;
+	texParams.texWrapR = GL_REPEAT;
 
-	glGenTextures(1, &blackTexture);
-	glBindTexture(GL_TEXTURE_2D, blackTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
-	glGenTextures(1, &whiteTexture);
-	glBindTexture(GL_TEXTURE_2D, whiteTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
-	glGenTextures(1, &lightCubeEmissiveTexture);
-	glBindTexture(GL_TEXTURE_2D, lightCubeEmissiveTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
-	glGenTextures(1, &defaultNormalTexture);
-	glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	blackTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
+	whiteTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
+	lightCubeEmissiveTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
+	defaultNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
 
 	glGenFramebuffers(1, &textureWriteFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
@@ -447,9 +488,7 @@ Application::Application() :
 										   "../src/shaders/dir_shadow_map_fs.glsl")},
 	omniShadowMapShader{createShaderProgram("../src/shaders/omni_shadow_map_vs.glsl",
 											"../src/shaders/omni_shadow_map_gs.glsl",
-										   "../src/shaders/omni_shadow_map_fs.glsl")},
-
-	floorWidth{20.0f}, matsUniformBinding{0}, ambience{0.1f}, cubeShininess{128.0f}, floorShininess{32.0f}
+										   "../src/shaders/omni_shadow_map_fs.glsl")}
 {
 	glDebugMessageCallback(glDebugCallback, nullptr);
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -467,16 +506,16 @@ Application::Application() :
 	addTextureUniforms();
 	addLightUniforms();
 
+	initLightStructsAndMatrices();
+	initObjectTransforms();
+	
+	createObjectTransformVBO();
 	size_t vboSize = createVBO();
 	createEBO();
 
-	initLightStructsAndMatrices();
-	initObjectTransforms();
-	createObjectTransformVBO();
-
 	createMatrixUBO();
 	createLightShadowMaps();
-	createTextures();
+	createTextureMaps();
 
 	createPostProcessFBO();
 

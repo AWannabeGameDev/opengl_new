@@ -9,6 +9,9 @@
         "new": "cpp",
         "stdarg.h": "c",
         "stdint.h": "c",
-        "functional": "cpp"
+        "functional": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "span": "cpp"
     }
 }

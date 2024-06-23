@@ -78,7 +78,6 @@ unsigned int compileShader(unsigned int type, std::string_view path)
 		glGetShaderInfoLog(shader, logLength, nullptr, message);
 
 		printf("Failed to compile shader %s : %s", path.data(), message);
-		printf("Code : \n%s", sourceStr);
 
 		::operator delete(message);
 

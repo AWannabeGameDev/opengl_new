@@ -8,14 +8,23 @@ UniformSetter::UniformSetter() :
 
 void UniformSetter::addUniform(unsigned int shaderID, std::string_view fieldName)
 {
-	UnrolledList<std::string>::Iterator it = names.addInPlace(fieldName);
+	auto it = names.addInPlace(fieldName);
 	std::string_view fieldNameStrView{*it};
 	nameToLocation[std::make_pair(shaderID, fieldNameStrView)] = glGetUniformLocation(shaderID, fieldName.data());
 }
 
 void UniformSetter::setUniform(unsigned int shaderID, std::string_view fieldName, const glm::vec3& vec3)
 {
-	glUniform3fv(nameToLocation.at(std::make_pair(shaderID, fieldName)), 1, &vec3[0]);
+	auto it = nameToLocation.find(std::make_pair(shaderID, fieldName));
+
+	if(it != nameToLocation.end())
+	{
+		glUniform3fv(it->second, 1, &vec3[0]);
+	}
+	else
+	{
+
+	}
 }
 
 void UniformSetter::setUniform(unsigned int shaderID, std::string_view fieldName, const glm::vec4& vec4)

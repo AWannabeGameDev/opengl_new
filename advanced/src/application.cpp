@@ -121,15 +121,15 @@ void Application::initLightStructsAndMatrices()
 	ambience = 0.1f;
 
 	dirLightRender.source.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
-	dirLightRender.source.diffuseColor = glm::vec3{0.7f, 0.7f, 0.7f};
-	dirLightRender.source.specularColor = glm::vec3{0.5f, 0.5f, 0.5f};
+	dirLightRender.source.diffuseColor = glm::vec3{0.6f, 0.6f, 0.6f};
+	dirLightRender.source.specularColor = glm::vec3{0.2f, 0.2f, 0.2f};
 
 	dirLightRender.matrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
 
 	pointLightRender.source.position = {0.0f, 2.0f, 0.0f};
-	pointLightRender.source.diffuseColor = 0.0f * glm::vec3{0.0f, 1.0f, 1.0f};
-	pointLightRender.source.specularColor = 0.0f * glm::vec3{0.0f, 0.4f, 0.4f};
+	pointLightRender.source.diffuseColor = glm::vec3{0.0f, 0.9f, 0.9f};
+	pointLightRender.source.specularColor = glm::vec3{0.0f, 0.5f, 0.5f};
 	pointLightRender.source.attenConst = 1.0f;
 	pointLightRender.source.attenLin = 0.045f;
 	pointLightRender.source.attenQuad = 0.0075f;
@@ -283,6 +283,7 @@ void Application::createMatrixUBO()
 	glBindBuffer(GL_UNIFORM_BUFFER, matsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(camera.projectionMatrix()));
+
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "mats"), matsUniformBinding);
 	glUniformBlockBinding(skyboxShader, glGetUniformBlockIndex(skyboxShader, "mats"), matsUniformBinding);
 	glBindBufferBase(GL_UNIFORM_BUFFER, matsUniformBinding, matsUBO);
@@ -291,7 +292,7 @@ void Application::createMatrixUBO()
 void Application::createTextureMaps()
 {
 	cubeShininess = 128.0f; 
-	floorShininess = 32.0f;
+	floorShininess = 16.0f;
 
 	TextureParameterSet texParams;
 	texParams.minFilter = GL_LINEAR_MIPMAP_LINEAR;

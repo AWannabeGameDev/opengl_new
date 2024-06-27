@@ -48,7 +48,16 @@ uniform float u_pointLightFarPlane;
 
 out vec4 fragColor;
 
-vec2 dispTexCoord = texCoord; // TODO: calculate texcoord displacement
+vec2 displaceTexCoord(vec2 texCoord)
+{
+	float height = texture(u_displacement, texCoord).r;
+	vec3 TBNviewDir = transpose(TBNMatrix) * normalize(u_viewPos - fragWorldCoord);
+
+	vec2 offset = TBNviewDir.xy / TBNviewDir.z * height;
+	return texCoord - offset;
+}
+
+vec2 dispTexCoord = displaceTexCoord(texCoord); 
 vec3 normal = normalize(TBNMatrix * ((2.0f * texture(u_normal, dispTexCoord).xyz) - vec3(1.0f)));
 
 vec3 calcDirLight(DirectionalLight light, vec3 diffuseFragColor, vec3 specularFragColor)

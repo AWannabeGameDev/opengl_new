@@ -110,6 +110,7 @@ void Application::addTextureUniforms()
 	uniforms.addUniform(shader, "u_specular");
 	uniforms.addUniform(shader, "u_emissive");
 	uniforms.addUniform(shader, "u_normal");
+	uniforms.addUniform(shader, "u_displacement");
 	uniforms.addUniform(shader, "u_materialShininess");
 
 	uniforms.addUniform(skyboxShader, "u_skybox");
@@ -121,8 +122,8 @@ void Application::initLightStructsAndMatrices()
 	ambience = 0.1f;
 
 	dirLightRender.source.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
-	dirLightRender.source.diffuseColor = glm::vec3{0.6f, 0.6f, 0.6f};
-	dirLightRender.source.specularColor = glm::vec3{0.2f, 0.2f, 0.2f};
+	dirLightRender.source.diffuseColor = 0.0f * glm::vec3{0.6f, 0.6f, 0.6f};
+	dirLightRender.source.specularColor = 0.0f * glm::vec3{0.3f, 0.3f, 0.3f};
 
 	dirLightRender.matrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
@@ -303,9 +304,10 @@ void Application::createTextureMaps()
 
 	cubeDiffuseTexture = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/container_diffuse.png", true);
 	cubeSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/container_specular.png", true);
-	floorDiffuseTexture = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/brick_diffuse.png", true);
-	floorSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_specular.png", true);
-	floorNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_normal.png", true);
+	floorDiffuseTexture = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/bricks2_diffuse.jpg", true);
+	//floorSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_specular.png", true);
+	floorNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_normal.jpg", true);
+	floorDispTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_displacement.jpg", true);
 
 	texParams.minFilter = GL_LINEAR;
 	texParams.magFilter = GL_LINEAR;
@@ -460,10 +462,11 @@ void Application::setUniforms()
 	setPointLightUniform(uniforms, shader, "u_pointLight", pointLightRender.source); // Should be done in 
 																					 // render loop if dynamic
 	uniforms.setUniform(shader, "u_ambience", ambience);
-	uniforms.setUniform(shader, "u_diffuse", DIFFUSE_TEXTURE_UNIT);   // These four can
+	uniforms.setUniform(shader, "u_diffuse", DIFFUSE_TEXTURE_UNIT);   // These five can
 	uniforms.setUniform(shader, "u_specular", SPECULAR_TEXTURE_UNIT); // have texture-arrays
 	uniforms.setUniform(shader, "u_emissive", EMISSIVE_TEXTURE_UNIT); // of the same size
 	uniforms.setUniform(shader, "u_normal", NORMAL_TEXTURE_UNIT);
+	uniforms.setUniform(shader, "u_displacement", DISPLACEMENT_TEXTURE_UNIT);
 	uniforms.setUniform(shader, "u_dirLightShadowMap", SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
 	uniforms.setUniform(shader, "u_pointLightShadowMap", SHADOW_MAP_TEXTURE_UNIT + 1); // Texture-arrays probably
 
@@ -677,6 +680,8 @@ void Application::run()
 		glBindTexture(GL_TEXTURE_2D, cubeSpecularTexture);
 		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
+		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
+		glBindTexture(GL_TEXTURE_2D, blackTexture);
 
 		uniforms.setUniform(shader, "u_materialShininess", cubeShininess);
 		glDrawElementsInstanced(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, NUM_CUBES);
@@ -689,6 +694,8 @@ void Application::run()
 		glBindTexture(GL_TEXTURE_2D, blackTexture);
 		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
+		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
+		glBindTexture(GL_TEXTURE_2D, blackTexture);
 
 		glDrawElementsInstancedBaseInstance(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, 1, NUM_CUBES);
 
@@ -697,9 +704,11 @@ void Application::run()
 		glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, floorDiffuseTexture);
 		glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, floorSpecularTexture);
+		glBindTexture(GL_TEXTURE_2D, whiteTexture);
 		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, floorNormalTexture);
+		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
+		glBindTexture(GL_TEXTURE_2D, floorDispTexture);
 
 		uniforms.setUniform(shader, "u_materialShininess", floorShininess);
 		glDisable(GL_CULL_FACE);

@@ -59,7 +59,8 @@ private :
 		SPECULAR_TEXTURE_UNIT = 3,
 		EMISSIVE_TEXTURE_UNIT = 4,
 		NORMAL_TEXTURE_UNIT = 5,
-		SHADOW_MAP_TEXTURE_UNIT = 6;
+		DISPLACEMENT_TEXTURE_UNIT = 6,
+		SHADOW_MAP_TEXTURE_UNIT = 7;
 
 	static constexpr int VERTEX_POS_ATTRIB_INDEX = 0,
 		VERTEX_TEXCOORD_ATTRIB_INDEX = 1,
@@ -103,6 +104,7 @@ private :
 	unsigned int cubeSpecularTexture, floorSpecularTexture;
 	unsigned int lightCubeEmissiveTexture;
 	unsigned int floorNormalTexture;
+	unsigned int floorDispTexture;
 	float cubeShininess, floorShininess;
 
 	DirectionalLightRender dirLightRender;

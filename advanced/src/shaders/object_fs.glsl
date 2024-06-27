@@ -34,6 +34,7 @@ uniform sampler2D u_diffuse;
 uniform sampler2D u_specular;
 uniform sampler2D u_emissive;
 uniform sampler2D u_normal;
+uniform sampler2D u_displacement;
 uniform float u_materialShininess;
 
 uniform DirectionalLight u_dirLight;
@@ -47,7 +48,8 @@ uniform float u_pointLightFarPlane;
 
 out vec4 fragColor;
 
-vec3 normal = normalize(TBNMatrix * ((2.0f * texture(u_normal, texCoord).xyz) - vec3(1.0f)));
+vec2 dispTexCoord = texCoord; // TODO: calculate texcoord displacement
+vec3 normal = normalize(TBNMatrix * ((2.0f * texture(u_normal, dispTexCoord).xyz) - vec3(1.0f)));
 
 vec3 calcDirLight(DirectionalLight light, vec3 diffuseFragColor, vec3 specularFragColor)
 {
@@ -118,9 +120,9 @@ vec2 shadowSampleOffsets[9] =
 
 void main()
 {
-	vec4 diffuseColor = texture(u_diffuse, texCoord);
-	vec4 specularColor = texture(u_specular, texCoord);
-	vec4 emissiveColor = texture(u_emissive, texCoord);
+	vec4 diffuseColor = texture(u_diffuse, dispTexCoord);
+	vec4 specularColor = texture(u_specular, dispTexCoord);
+	vec4 emissiveColor = texture(u_emissive, dispTexCoord);
 
 	fragColor.rgb = vec3(0.0f, 0.0f, 0.0f);
 	fragColor.rgb += u_ambience * diffuseColor.rgb;

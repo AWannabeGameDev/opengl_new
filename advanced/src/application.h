@@ -105,7 +105,7 @@ private :
 	unsigned int lightCubeEmissiveTexture;
 	unsigned int floorNormalTexture;
 	unsigned int floorDispTexture;
-	float cubeShininess, floorShininess;
+	float cubeShininess, floorShininess, floorHeightScale, lightCubeEmissiveStrength;
 
 	DirectionalLightRender dirLightRender;
 	PointLightRender pointLightRender;

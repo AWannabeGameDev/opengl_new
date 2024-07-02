@@ -112,6 +112,8 @@ void Application::addTextureUniforms()
 	uniforms.addUniform(shader, "u_normal");
 	uniforms.addUniform(shader, "u_displacement");
 	uniforms.addUniform(shader, "u_materialShininess");
+	uniforms.addUniform(shader, "u_heightScale");
+	uniforms.addUniform(shader, "u_emissiveStrength");
 
 	uniforms.addUniform(skyboxShader, "u_skybox");
 	uniforms.addUniform(fbShader, "fbTexture");
@@ -294,6 +296,7 @@ void Application::createTextureMaps()
 {
 	cubeShininess = 128.0f; 
 	floorShininess = 16.0f;
+	floorHeightScale = 0.5f;
 
 	TextureParameterSet texParams;
 	texParams.minFilter = GL_LINEAR_MIPMAP_LINEAR;
@@ -606,6 +609,11 @@ void Application::run()
 
 		// Also set light source structs but that is constant for now.
 
+		float timeSine = sinf(currentTime);
+		pointLightRender.source.diffuseColor = {0.0f, 0.9f * timeSine * timeSine, 0.9f * timeSine * timeSine};
+		pointLightRender.source.specularColor = {0.0f, 0.5f * timeSine * timeSine, 0.5f * timeSine * timeSine};
+		lightCubeEmissiveStrength = timeSine * timeSine;		
+
 		//----------------------------------------
 
 		glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
@@ -664,6 +672,8 @@ void Application::run()
 		uniforms.setUniform(shader, "u_viewPos", camera.position);
 		uniforms.setUniform(shader, "u_dirLightSpaceMatrix", dirLightRender.matrix);
 		uniforms.setUniform(shader, "u_pointLightFarPlane", pointLightRender.farPlane);
+		uniforms.setUniform(shader, "u_pointLight.diffuseColor", pointLightRender.source.diffuseColor);
+		uniforms.setUniform(shader, "u_pointLight.specularColor", pointLightRender.source.specularColor);
 
 		// Also set all light source struct uniforms but that is constant for now
 
@@ -697,6 +707,7 @@ void Application::run()
 		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, blackTexture);
 
+		uniforms.setUniform(shader, "u_emissiveStrength", lightCubeEmissiveStrength);
 		glDrawElementsInstancedBaseInstance(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, 1, NUM_CUBES);
 
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
@@ -711,6 +722,7 @@ void Application::run()
 		glBindTexture(GL_TEXTURE_2D, floorDispTexture);
 
 		uniforms.setUniform(shader, "u_materialShininess", floorShininess);
+		uniforms.setUniform(shader, "u_heightScale", floorHeightScale);
 		glDisable(GL_CULL_FACE);
 		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, xysquare::NUM_INDICES, GL_UNSIGNED_INT, 
 													  (const void*)(cube::NUM_INDICES * sizeof(unsigned int)), 

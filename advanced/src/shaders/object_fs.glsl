@@ -36,6 +36,8 @@ uniform sampler2D u_emissive;
 uniform sampler2D u_normal;
 uniform sampler2D u_displacement;
 uniform float u_materialShininess;
+uniform float u_heightScale;
+uniform float u_emissiveStrength;
 
 uniform DirectionalLight u_dirLight;
 uniform PointLight u_pointLight;
@@ -53,7 +55,7 @@ vec2 displaceTexCoord(vec2 texCoord)
 	float height = texture(u_displacement, texCoord).r;
 	vec3 TBNviewDir = transpose(TBNMatrix) * normalize(u_viewPos - fragWorldCoord);
 
-	vec2 offset = TBNviewDir.xy / TBNviewDir.z * height;
+	vec2 offset = TBNviewDir.xy / TBNviewDir.z * height *u_heightScale;
 	return texCoord - offset;
 }
 
@@ -135,7 +137,7 @@ void main()
 
 	fragColor.rgb = vec3(0.0f, 0.0f, 0.0f);
 	fragColor.rgb += u_ambience * diffuseColor.rgb;
-	fragColor.rgb += emissiveColor.rgb;
+	fragColor.rgb += emissiveColor.rgb * u_emissiveStrength;
 	fragColor.a = diffuseColor.a;
 
 	float dirLightShadowStrength = 0.0f;

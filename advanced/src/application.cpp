@@ -97,6 +97,7 @@ void Application::addLightUniforms()
 	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceViewMatrices[4]");
 	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceViewMatrices[5]");
 	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceProjMatrix");
+	uniforms.addUniform(omniShadowMapShader, "u_lightSpacePositionMatrix");
 	uniforms.addUniform(omniShadowMapShader, "u_farPlane");
 	uniforms.addUniform(shader, "u_pointLightShadowMap");
 
@@ -130,33 +131,43 @@ void Application::initLightStructsAndMatrices()
 	dirLightRender.matrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
 
+	maxBrightDiffuseColor = {0.0f, 0.9f, 0.9f};
+	maxBrightSpecularColor = {0.0f, 0.5f, 0.5f};
+
 	pointLightRender.source.position = {0.0f, 2.0f, 0.0f};
-	pointLightRender.source.diffuseColor = glm::vec3{0.0f, 0.9f, 0.9f};
-	pointLightRender.source.specularColor = glm::vec3{0.0f, 0.5f, 0.5f};
+	pointLightRender.source.diffuseColor = maxBrightDiffuseColor;
+	pointLightRender.source.specularColor = maxBrightSpecularColor;
 	pointLightRender.source.attenConst = 1.0f;
 	pointLightRender.source.attenLin = 0.045f;
 	pointLightRender.source.attenQuad = 0.0075f;
 
 	pointLightRender.farPlane = 20.0f;
 	pointLightRender.projMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, pointLightRender.farPlane);
-	pointLightRender.viewMatrices[0] = glm::lookAt(pointLightRender.source.position,
-												   pointLightRender.source.position + glm::vec3{1.0f, 0.0f, 0.0f}, 
-												   {0.0f, -1.0f, 0.0f});
-	pointLightRender.viewMatrices[1] = glm::lookAt(pointLightRender.source.position,
-												   pointLightRender.source.position + glm::vec3{-1.0f, 0.0f, 0.0f}, 
-												   {0.0f, -1.0f, 0.0f});
-	pointLightRender.viewMatrices[2] = glm::lookAt(pointLightRender.source.position,
-												   pointLightRender.source.position + glm::vec3{0.0f, 1.0f, 0.0f}, 
-												   {0.0f, 0.0f, 1.0f});
-	pointLightRender.viewMatrices[3] = glm::lookAt(pointLightRender.source.position,
-												   pointLightRender.source.position + glm::vec3{0.0f, -1.0f, 0.0f}, 
-												   {0.0f, 0.0f, -1.0f});
-	pointLightRender.viewMatrices[4] = glm::lookAt(pointLightRender.source.position,
-												   pointLightRender.source.position + glm::vec3{0.0f, 0.0f, 1.0f}, 
-												   {0.0f, -1.0f, 0.0f});
-	pointLightRender.viewMatrices[5] = glm::lookAt(pointLightRender.source.position,
-												   pointLightRender.source.position + glm::vec3{0.0f, 0.0f, -1.0f}, 
-												   {0.0f, -1.0f, 0.0f});
+	pointLightRender.positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRender.source.position);
+
+	pointLightRender.viewMatrices[0] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+												   glm::vec3{1.0f, 0.0f, 0.0f}, 
+												   glm::vec3{0.0f, -1.0f, 0.0f});
+
+	pointLightRender.viewMatrices[1] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+												   glm::vec3{-1.0f, 0.0f, 0.0f}, 
+												   glm::vec3{0.0f, -1.0f, 0.0f});
+
+	pointLightRender.viewMatrices[2] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+												   glm::vec3{0.0f, 1.0f, 0.0f}, 
+												   glm::vec3{0.0f, 0.0f, 1.0f});
+
+	pointLightRender.viewMatrices[3] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+												   glm::vec3{0.0f, -1.0f, 0.0f}, 
+												   glm::vec3{0.0f, 0.0f, -1.0f});
+
+	pointLightRender.viewMatrices[4] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+												   glm::vec3{0.0f, 0.0f, 1.0f}, 
+												   glm::vec3{0.0f, -1.0f, 0.0f});
+
+	pointLightRender.viewMatrices[5] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+												   glm::vec3{0.0f, 0.0f, -1.0f}, 
+												   glm::vec3{0.0f, -1.0f, 0.0f});
 }
 
 void Application::createLightShadowMaps()
@@ -296,7 +307,8 @@ void Application::createTextureMaps()
 {
 	cubeShininess = 128.0f; 
 	floorShininess = 16.0f;
-	floorHeightScale = 0.5f;
+	lightCubeEmissiveStrength = 1.0f;
+	floorHeightScale = 0.6f;
 
 	TextureParameterSet texParams;
 	texParams.minFilter = GL_LINEAR_MIPMAP_LINEAR;
@@ -473,6 +485,15 @@ void Application::setUniforms()
 	uniforms.setUniform(shader, "u_dirLightShadowMap", SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
 	uniforms.setUniform(shader, "u_pointLightShadowMap", SHADOW_MAP_TEXTURE_UNIT + 1); // Texture-arrays probably
 
+	glUseProgram(omniShadowMapShader);
+	uniforms.setUniform(omniShadowMapShader, "u_lightSpaceProjMatrix", pointLightRender.projMatrix);
+	for(int i = 0; i < 6; i++)
+	{
+		uniforms.setUniform(omniShadowMapShader, std::format("u_lightSpaceViewMatrices[{}]", i), 
+							pointLightRender.viewMatrices[i]);
+	}
+	uniforms.setUniform(omniShadowMapShader, "u_farPlane", pointLightRender.farPlane);
+
 	glUseProgram(skyboxShader);
 	uniforms.setUniform(skyboxShader, "u_skybox", SKYBOX_TEXTURE_UNIT);
 
@@ -486,7 +507,7 @@ Application::Application() :
 	keys{window}, mouse{window},
 
 	camera{glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f},
-	CAMERA_SENSITIVITY{1.0f}, CAMERA_SPEED{15.0f},
+	camSensitivity{1.0f}, camSpeed{15.0f}, pointLightBrightnessSpeed{0.5f}, pointLightMoveSpeed{15.0f},
 
 	shader{createShaderProgram("../src/shaders/object_vs.glsl", "../src/shaders/object_fs.glsl")},
 	fbShader{createShaderProgram("../src/shaders/framebuffer_vs.glsl", "../src/shaders/framebuffer_fs.glsl")},
@@ -509,6 +530,10 @@ Application::Application() :
 	keys.setKeybind("RIGHT", GLFW_KEY_D);
 	keys.setKeybind("UP", GLFW_KEY_SPACE);
 	keys.setKeybind("DOWN", GLFW_KEY_LEFT_SHIFT);
+	keys.setKeybind("LIGHT_BRIGHT", GLFW_KEY_RIGHT_BRACKET);
+	keys.setKeybind("LIGHT_DIM", GLFW_KEY_LEFT_BRACKET);
+	keys.setKeybind("LIGHT_UP", GLFW_KEY_O);
+	keys.setKeybind("LIGHT_DOWN", GLFW_KEY_L);
 
 	addTextureUniforms();
 	addLightUniforms();
@@ -569,27 +594,27 @@ void Application::run()
 
 		if(keys.keyPressed("FORWARD"))
 		{
-			camera.position += -camera.behind() * CAMERA_SPEED * deltaTime;
+			camera.position += -camera.behind() * camSpeed * deltaTime;
 		}
 		else if(keys.keyPressed("BACKWARD"))
 		{
-			camera.position += camera.behind() * CAMERA_SPEED * deltaTime;
+			camera.position += camera.behind() * camSpeed * deltaTime;
 		}
 		if(keys.keyPressed("LEFT"))
 		{
-			camera.position += -camera.right() * CAMERA_SPEED * deltaTime;
+			camera.position += -camera.right() * camSpeed * deltaTime;
 		}
 		else if(keys.keyPressed("RIGHT"))
 		{
-			camera.position += camera.right() * CAMERA_SPEED * deltaTime;
+			camera.position += camera.right() * camSpeed * deltaTime;
 		}
 		if(keys.keyPressed("UP"))
 		{
-			camera.position += camera.up() * CAMERA_SPEED * deltaTime;
+			camera.position += camera.up() * camSpeed * deltaTime;
 		}
 		else if(keys.keyPressed("DOWN"))
 		{
-			camera.position += -camera.up() * CAMERA_SPEED * deltaTime;
+			camera.position += -camera.up() * camSpeed * deltaTime;
 		}
 		
 		glm::vec3 camUp{0.0f, 1.0f, 0.0f};
@@ -598,21 +623,38 @@ void Application::run()
 		float mouseMoveX = mouse.getMouseMovementX();
 		if(mouseMoveX != 0)
 		{
-			camera.rotateGlobal(camUp, -mouseMoveX * CAMERA_SENSITIVITY * deltaTime);
+			camera.rotateGlobal(camUp, -mouseMoveX * camSensitivity * deltaTime);
 		}
 
 		float mouseMoveY = mouse.getMouseMovementY();
 		if(mouseMoveY != 0)
 		{
-			camera.rotateGlobal(camRight, mouseMoveY * CAMERA_SENSITIVITY * deltaTime);
+			camera.rotateGlobal(camRight, mouseMoveY * camSensitivity * deltaTime);
 		}
 
-		// Also set light source structs but that is constant for now.
+		if(keys.keyPressed("LIGHT_BRIGHT") && 
+		   (glm::length(pointLightRender.source.diffuseColor) < glm::length(maxBrightDiffuseColor)))
+		{
+			pointLightRender.source.diffuseColor += pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
+			pointLightRender.source.specularColor += pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
+			lightCubeEmissiveStrength += pointLightBrightnessSpeed * deltaTime; 
+		}
+		else if(keys.keyPressed("LIGHT_DIM") && (glm::length(pointLightRender.source.diffuseColor) > 0.1f))
+		{
+			pointLightRender.source.diffuseColor -= pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
+			pointLightRender.source.specularColor -= pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
+			lightCubeEmissiveStrength -= pointLightBrightnessSpeed * deltaTime;
+		}
 
-		float timeSine = sinf(currentTime);
-		pointLightRender.source.diffuseColor = {0.0f, 0.9f * timeSine * timeSine, 0.9f * timeSine * timeSine};
-		pointLightRender.source.specularColor = {0.0f, 0.5f * timeSine * timeSine, 0.5f * timeSine * timeSine};
-		lightCubeEmissiveStrength = timeSine * timeSine;		
+		if(keys.keyPressed("LIGHT_UP"))
+		{
+			pointLightRender.source.position.y += pointLightMoveSpeed * deltaTime;
+		}
+		else if(keys.keyPressed("LIGHT_DOWN"))
+		{
+			pointLightRender.source.position.y -= pointLightMoveSpeed * deltaTime; 
+		}
+		pointLightRender.positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRender.source.position);
 
 		//----------------------------------------
 
@@ -641,14 +683,7 @@ void Application::run()
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointLightRender.shadowCubeMap, 0);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-	
-		uniforms.setUniform(omniShadowMapShader, "u_lightSpaceProjMatrix", pointLightRender.projMatrix);
-		for(int i = 0; i < 6; i++)
-		{
-			uniforms.setUniform(omniShadowMapShader, std::format("u_lightSpaceViewMatrices[{}]", i), 
-								pointLightRender.viewMatrices[i]);
-		}
-		uniforms.setUniform(omniShadowMapShader, "u_farPlane", pointLightRender.farPlane);
+		uniforms.setUniform(omniShadowMapShader, "u_lightSpacePositionMatrix", pointLightRender.positionMatrix);
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -674,8 +709,7 @@ void Application::run()
 		uniforms.setUniform(shader, "u_pointLightFarPlane", pointLightRender.farPlane);
 		uniforms.setUniform(shader, "u_pointLight.diffuseColor", pointLightRender.source.diffuseColor);
 		uniforms.setUniform(shader, "u_pointLight.specularColor", pointLightRender.source.specularColor);
-
-		// Also set all light source struct uniforms but that is constant for now
+		uniforms.setUniform(shader, "u_pointLight.pos", pointLightRender.source.position);
 
 		glActiveTexture(GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, dirLightRender.shadowMap);
@@ -706,6 +740,8 @@ void Application::run()
 		glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
 		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, blackTexture);
+
+		// TODO: Update vertex data of light cube position
 
 		uniforms.setUniform(shader, "u_emissiveStrength", lightCubeEmissiveStrength);
 		glDrawElementsInstancedBaseInstance(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, 1, NUM_CUBES);

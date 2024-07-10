@@ -55,7 +55,7 @@ vec2 displaceTexCoord(vec2 texCoord)
 	float height = texture(u_displacement, texCoord).r;
 	vec3 TBNviewDir = transpose(TBNMatrix) * normalize(u_viewPos - fragWorldCoord);
 
-	vec2 offset = TBNviewDir.xy / TBNviewDir.z * height *u_heightScale;
+	vec2 offset = TBNviewDir.xy / TBNviewDir.z * height * u_heightScale;
 	return texCoord - offset;
 }
 

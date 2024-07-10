@@ -5,6 +5,7 @@ layout(triangle_strip, max_vertices = 18) out;
 
 uniform mat4 u_lightSpaceProjMatrix;
 uniform mat4 u_lightSpaceViewMatrices[6];
+uniform mat4 u_lightSpacePositionMatrix;
 
 out vec3 fragViewCoord;
 
@@ -16,7 +17,7 @@ void main()
 
 		for(int i = 0; i < 3; i++)
 		{
-			fragViewCoord = (u_lightSpaceViewMatrices[face] * gl_in[i].gl_Position).xyz;
+			fragViewCoord = (u_lightSpaceViewMatrices[face] * u_lightSpacePositionMatrix * gl_in[i].gl_Position).xyz;
 			gl_Position = u_lightSpaceProjMatrix * vec4(fragViewCoord, 1.0f);
 			EmitVertex();
 		}

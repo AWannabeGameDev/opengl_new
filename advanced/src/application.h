@@ -13,6 +13,7 @@ struct PointLightRender
 	unsigned int shadowCubeMap;
 	glm::mat4 projMatrix;
 	glm::mat4 viewMatrices[6];
+	glm::mat4 positionMatrix;
 	float farPlane;
 	PointLight source;
 };
@@ -89,7 +90,10 @@ private :
 	float prevTime;
 
 	Camera camera;
-	const float CAMERA_SENSITIVITY, CAMERA_SPEED;
+	float camSensitivity, camSpeed;
+
+	float pointLightBrightnessSpeed, pointLightMoveSpeed;
+	glm::vec3 maxBrightDiffuseColor, maxBrightSpecularColor;
 
 	unsigned int vao, vbo, ebo;
 	unsigned int instanceVBO;

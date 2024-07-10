@@ -31,6 +31,13 @@ struct TextureParameterSet
 	unsigned int texWrapS, texWrapT, texWrapR;
 };
 
+struct ModelInfo
+{
+	unsigned int indexCount;
+	unsigned int eboOffset;
+	int vboOffset;
+};
+
 class Application
 {
 private :
@@ -127,6 +134,8 @@ private :
 	unsigned int rbo;
 	unsigned int fbQuadVBO;
 	unsigned int fbQuadEBO;
+
+	ModelInfo cubeModelInfo, planeModelInfo;
 
 	static constexpr int NUM_CUBES = 4;
 	glm::mat4 cubeTransformMats[NUM_CUBES];

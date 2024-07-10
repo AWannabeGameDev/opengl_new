@@ -509,6 +509,8 @@ Application::Application() :
 	camera{glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f},
 	camSensitivity{1.0f}, camSpeed{15.0f}, pointLightBrightnessSpeed{0.5f}, pointLightMoveSpeed{15.0f},
 
+	cubeModelInfo{cube::NUM_INDICES, 0, 0}, planeModelInfo{xysquare::NUM_INDICES, cube::NUM_VERTS, cube::NUM_VERTS},
+
 	shader{createShaderProgram("../src/shaders/object_vs.glsl", "../src/shaders/object_fs.glsl")},
 	fbShader{createShaderProgram("../src/shaders/framebuffer_vs.glsl", "../src/shaders/framebuffer_fs.glsl")},
 	skyboxShader{createShaderProgram("../src/shaders/skybox_vs.glsl", "../src/shaders/skybox_fs.glsl")},

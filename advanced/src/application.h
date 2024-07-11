@@ -38,6 +38,15 @@ struct ModelInfo
 	int vboOffset;
 };
 
+struct DrawIndirect
+{
+	unsigned int indexCount;
+	unsigned int instanceCount;
+	unsigned int eboOffset;
+	int vboOffset;
+	unsigned int objectOffset;
+};
+
 class Application
 {
 private :
@@ -136,6 +145,7 @@ private :
 	unsigned int fbQuadEBO;
 
 	ModelInfo cubeModelInfo, planeModelInfo;
+	std::vector<ModelInfo, std::vector<glm::mat4>> objects;
 
 	static constexpr int NUM_CUBES = 4;
 	glm::mat4 cubeTransformMats[NUM_CUBES];

@@ -17,6 +17,4 @@ unsigned int createShaderProgram(std::string_view vertexShaderPath, std::string_
 unsigned int createShaderProgram(std::string_view vertexShaderPath, std::string_view geometryShaderPath,
 								 std::string_view fragmentShaderPath);
 
-float randrange(float min, float max);
-
 #endif

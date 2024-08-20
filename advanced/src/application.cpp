@@ -2,6 +2,7 @@
 #include <utility/raw_model_data.h>
 #include <ctime>
 #include <utility/stb_image.h>
+#include <utility/misc.h>
 #include <format>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>

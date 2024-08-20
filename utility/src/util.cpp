@@ -168,8 +168,3 @@ unsigned int createShaderProgram(std::string_view vertexShaderPath, std::string_
 
 	return program;
 }
-
-float randrange(float min, float max)
-{
-	return (((float)rand() * (max - min) / RAND_MAX) + min);
-}

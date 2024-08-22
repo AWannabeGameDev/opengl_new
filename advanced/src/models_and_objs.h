@@ -10,14 +10,6 @@ struct ModelInfo
     unsigned int diffuseMapID, specularMapID, emissiveMapID, normalMapID, dispMapID;
 };
 
-template<>
-struct std::hash<ModelInfo> 
-{
-	std::size_t operator()(const ModelInfo& obj) const noexcept;
-};
-
-bool operator==(const ModelInfo& obj1, const ModelInfo& obj2);
-
 struct InstanceInfo
 {
     glm::mat4 transform;

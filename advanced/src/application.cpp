@@ -255,25 +255,21 @@ void Application::initObjectTransforms()
 	floorWidth = 20.0f;
 
 	srand((unsigned int)time(0));
-	for(int i = 0; i < NUM_CUBES; i++)
+	for(glm::mat4& cubeTransformMat : cubeTransformMats)
 	{
 		Transform cubeTransform{};
 		cubeTransform.position = {randrange(-9.5f, 9.5f), 0.50f, randrange(-9.5f, 9.5f)};
-		objects.transforms.emplace_back(cubeTransform.matrix());
-		objects.correspondingModels.emplace_back(cubeModelInfo);
+		cubeTransformMat = cubeTransform.matrix();
 	}
-
 	Transform lightCubeTransform{};
 	lightCubeTransform.scale = {0.25f, 0.25f, 0.25f};
 	lightCubeTransform.position = pointLightRender.source.position;
-	objects.transforms.emplace_back(lightCubeTransform.matrix());
-	objects.correspondingModels.emplace_back(cubeModelInfo);
+	lightCubeTransformMat = lightCubeTransform.matrix();
 
 	Transform floorTransform{};
 	floorTransform.scale = {floorWidth, floorWidth, 1.0f};
 	floorTransform.rotation = glm::angleAxis(glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f});
-	objects.transforms.emplace_back(floorTransform.matrix());
-	objects.correspondingModels.emplace_back(planeModelInfo);
+	floorTransformMat = floorTransform.matrix();
 }
 
 void Application::createObjectTransformVBO()

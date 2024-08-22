@@ -317,12 +317,13 @@ void Application::createTextureMaps()
 	texParams.texWrapT = GL_REPEAT;
 	texParams.texWrapR = GL_REPEAT;
 
-	cubeDiffuseTexture = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/container_diffuse.png", true);
-	cubeSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/container_specular.png", true);
-	floorDiffuseTexture = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/bricks2_diffuse.jpg", true);
+	woodCubeModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/container_diffuse.png", true);
+	woodCubeModelInfo.specularMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/container_specular.png", true);
+
+	floorModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/bricks2_diffuse.jpg", true);
 	//floorSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_specular.png", true);
-	floorNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_normal.jpg", true);
-	floorDispTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_displacement.jpg", true);
+	floorModelInfo.normalMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_normal.jpg", true);
+	floorModelInfo.dispMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_displacement.jpg", true);
 
 	texParams.minFilter = GL_LINEAR;
 	texParams.magFilter = GL_LINEAR;
@@ -376,6 +377,13 @@ void Application::createTextureMaps()
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	woodCubeModelInfo.emissiveMapID = blackTexture;
+	woodCubeModelInfo.normalMapID = defaultNormalTexture;
+	woodCubeModelInfo.dispMapID = blackTexture;
+
+	floorModelInfo.specularMapID = blackTexture;
+	floorModelInfo.emissiveMapID = blackTexture;
 }
 
 void Application::createPostProcessFBO()
@@ -528,8 +536,8 @@ Application::Application() :
 	keys.setKeybind("BACKWARD", GLFW_KEY_S);
 	keys.setKeybind("LEFT", GLFW_KEY_A);
 	keys.setKeybind("RIGHT", GLFW_KEY_D);
-	keys.setKeybind("UP", GLFW_KEY_SPACE);
-	keys.setKeybind("DOWN", GLFW_KEY_LEFT_SHIFT);
+	keys.setKeybind("UP", GLFW_KEY_LEFT_SHIFT);
+	keys.setKeybind("DOWN", GLFW_KEY_LEFT_CONTROL);
 	keys.setKeybind("LIGHT_BRIGHT", GLFW_KEY_RIGHT_BRACKET);
 	keys.setKeybind("LIGHT_DIM", GLFW_KEY_LEFT_BRACKET);
 	keys.setKeybind("LIGHT_UP", GLFW_KEY_O);
@@ -717,52 +725,56 @@ void Application::run()
 		glBindTexture(GL_TEXTURE_CUBE_MAP, pointLightRender.shadowCubeMap);
 		
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, blackTexture);
+		glBindTexture(GL_TEXTURE_2D, woodCubeModelInfo.emissiveMapID);
 		glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, cubeDiffuseTexture);
+		glBindTexture(GL_TEXTURE_2D, woodCubeModelInfo.diffuseMapID);
 		glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, cubeSpecularTexture);
+		glBindTexture(GL_TEXTURE_2D, woodCubeModelInfo.specularMapID);
 		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
+		glBindTexture(GL_TEXTURE_2D, woodCubeModelInfo.normalMapID);
 		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, blackTexture);
+		glBindTexture(GL_TEXTURE_2D, woodCubeModelInfo.dispMapID);
 
 		uniforms.setUniform(shader, "u_materialShininess", cubeShininess);
-		glDrawElementsInstanced(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, NUM_CUBES);
+		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, woodCubeModelInfo.indexCount, GL_UNSIGNED_INT,
+														   (const void*)woodCubeModelInfo.eboOffset, woodCubeModelInfo.instanceCount,
+														   woodCubeModelInfo.vboOffset, woodCubeModelInfo.instanceOffset);
 
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, lightCubeEmissiveTexture);
+		glBindTexture(GL_TEXTURE_2D, lightCubeModelInfo.emissiveMapID);
 		glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, blackTexture);
+		glBindTexture(GL_TEXTURE_2D, lightCubeModelInfo.diffuseMapID);
 		glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, blackTexture);
+		glBindTexture(GL_TEXTURE_2D, lightCubeModelInfo.specularMapID);
 		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, defaultNormalTexture);
+		glBindTexture(GL_TEXTURE_2D, lightCubeModelInfo.normalMapID);
 		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, blackTexture);
+		glBindTexture(GL_TEXTURE_2D, lightCubeModelInfo.dispMapID);
 
 		// TODO: Update vertex data of light cube position
 
 		uniforms.setUniform(shader, "u_emissiveStrength", lightCubeEmissiveStrength);
-		glDrawElementsInstancedBaseInstance(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, 1, NUM_CUBES);
+		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, lightCubeModelInfo.indexCount, GL_UNSIGNED_INT,
+													  (const void*)lightCubeModelInfo.eboOffset, lightCubeModelInfo.instanceCount,
+													  lightCubeModelInfo.vboOffset, lightCubeModelInfo.instanceOffset);
 
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, blackTexture);
+		glBindTexture(GL_TEXTURE_2D, floorModelInfo.emissiveMapID);
 		glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, floorDiffuseTexture);
+		glBindTexture(GL_TEXTURE_2D, floorModelInfo.diffuseMapID);
 		glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, whiteTexture);
+		glBindTexture(GL_TEXTURE_2D, floorModelInfo.specularMapID);
 		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, floorNormalTexture);
+		glBindTexture(GL_TEXTURE_2D, floorModelInfo.normalMapID);
 		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, floorDispTexture);
+		glBindTexture(GL_TEXTURE_2D, floorModelInfo.dispMapID);
 
 		uniforms.setUniform(shader, "u_materialShininess", floorShininess);
 		uniforms.setUniform(shader, "u_heightScale", floorHeightScale);
 		glDisable(GL_CULL_FACE);
-		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, xysquare::NUM_INDICES, GL_UNSIGNED_INT, 
-													  (const void*)(cube::NUM_INDICES * sizeof(unsigned int)), 
-													  1, cube::NUM_VERTS, NUM_CUBES + 1);
+		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, floorModelInfo.indexCount, GL_UNSIGNED_INT,
+														   (const void*)floorModelInfo.eboOffset, floorModelInfo.instanceCount,
+														   floorModelInfo.vboOffset, floorModelInfo.instanceOffset);
 
 		glUseProgram(skyboxShader);
 		glDrawElements(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0);

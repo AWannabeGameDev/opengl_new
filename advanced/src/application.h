@@ -31,6 +31,16 @@ struct TextureParameterSet
 	unsigned int texWrapS, texWrapT, texWrapR;
 };
 
+struct ModelInfo
+{
+	unsigned int indexCount;
+	unsigned int eboOffset;
+	int vboOffset;
+	unsigned int instanceCount;
+	unsigned int instanceOffset;
+	unsigned int diffuseMapID, specularMapID, emissiveMapID, normalMapID, dispMapID;
+};
+
 class Application
 {
 private :
@@ -99,6 +109,8 @@ private :
 	unsigned int instanceVBO;
 	unsigned int matsUBO;
 	unsigned int matsUniformBinding;
+
+	ModelInfo woodCubeModelInfo, lightCubeModelInfo, floorModelInfo;
 
 	TextureParameterSet defaultTexParams;
 	unsigned int blackTexture, whiteTexture, defaultNormalTexture;

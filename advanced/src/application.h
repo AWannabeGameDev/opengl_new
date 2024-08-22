@@ -7,7 +7,6 @@
 #include <utility/camera.h>
 #include <utility/transform.h>
 #include <utility/uniform_setter.h>
-#include "models_and_objs.h"
 
 struct PointLightRender
 {
@@ -129,7 +128,9 @@ private :
 	unsigned int fbQuadVBO;
 	unsigned int fbQuadEBO;
 
-	ModelInfo woodCubeModelInfo, lightCubeModelInfo, planeModelInfo;
+	ModelInfo cubeModelInfo, planeModelInfo;
+	std::vector<DrawIndirect> drawCmds;
+	std::vector<glm::mat4> objects;
 
 	static constexpr int NUM_CUBES = 4;
 	glm::mat4 cubeTransformMats[NUM_CUBES];

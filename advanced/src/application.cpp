@@ -125,8 +125,8 @@ void Application::initLightStructsAndMatrices()
 	ambience = 0.1f;
 
 	dirLightRender.source.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
-	dirLightRender.source.diffuseColor = 0.0f * glm::vec3{0.6f, 0.6f, 0.6f};
-	dirLightRender.source.specularColor = 0.0f * glm::vec3{0.3f, 0.3f, 0.3f};
+	dirLightRender.source.diffuseColor = glm::vec3{0.6f, 0.6f, 0.6f};
+	dirLightRender.source.specularColor = glm::vec3{0.3f, 0.3f, 0.3f};
 
 	dirLightRender.matrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
@@ -289,6 +289,27 @@ void Application::createObjectTransformVBO()
 	glBufferData(GL_ARRAY_BUFFER, instanceVBOVector.size(), instanceVBOVector.data(), GL_STATIC_DRAW);
 }
 
+void Application::setModelInfos()
+{
+	woodCubeModelInfo.indexCount = cube::NUM_INDICES;
+	woodCubeModelInfo.eboOffset = 0;
+	woodCubeModelInfo.vboOffset = 0;
+	woodCubeModelInfo.instanceCount = NUM_CUBES;
+	woodCubeModelInfo.instanceOffset = 0;
+
+	lightCubeModelInfo.indexCount = cube::NUM_INDICES;
+	lightCubeModelInfo.eboOffset = 0;
+	lightCubeModelInfo.vboOffset = 0;
+	lightCubeModelInfo.instanceCount = 1;
+	lightCubeModelInfo.instanceOffset = NUM_CUBES;
+
+	floorModelInfo.indexCount = xysquare::NUM_INDICES;
+	floorModelInfo.eboOffset = cube::NUM_INDICES;
+	floorModelInfo.vboOffset = cube::NUM_VERTS;
+	floorModelInfo.instanceCount = 1;
+	floorModelInfo.instanceOffset = NUM_CUBES + 1;
+}
+
 void Application::createMatrixUBO()
 {
 	matsUniformBinding = 0;
@@ -350,14 +371,14 @@ void Application::createTextureMaps()
 
 	blackTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
 	whiteTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
-	lightCubeEmissiveTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
+	lightCubeModelInfo.emissiveMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
 	defaultNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
 
 	glGenFramebuffers(1, &textureWriteFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
 	glViewport(0, 0, 1, 1);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lightCubeEmissiveTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lightCubeModelInfo.emissiveMapID, 0);
 	glClearColor(pointLightRender.source.diffuseColor.r,
 				 pointLightRender.source.diffuseColor.g, pointLightRender.source.diffuseColor.b, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -381,6 +402,11 @@ void Application::createTextureMaps()
 	woodCubeModelInfo.emissiveMapID = blackTexture;
 	woodCubeModelInfo.normalMapID = defaultNormalTexture;
 	woodCubeModelInfo.dispMapID = blackTexture;
+
+	lightCubeModelInfo.diffuseMapID = blackTexture;
+	lightCubeModelInfo.specularMapID = blackTexture;
+	lightCubeModelInfo.normalMapID = defaultNormalTexture;
+	lightCubeModelInfo.dispMapID = blackTexture;
 
 	floorModelInfo.specularMapID = blackTexture;
 	floorModelInfo.emissiveMapID = blackTexture;
@@ -553,6 +579,8 @@ Application::Application() :
 	size_t vboSize = createVBO();
 	createEBO();
 
+	setModelInfos();
+
 	createMatrixUBO();
 	createLightShadowMaps();
 	createTextureMaps();
@@ -566,13 +594,13 @@ Application::Application() :
 
 Application::~Application()
 {
+	// Check properly what to delete
+
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &ebo);
 	glDeleteBuffers(1, &instanceVBO);
 	glDeleteBuffers(1, &matsUBO);
-	glDeleteTextures(1, &cubeDiffuseTexture);
-	glDeleteTextures(1, &floorDiffuseTexture);
 	glDeleteTextures(1, &skybox);
 	glDeleteProgram(shader);
 	glDeleteProgram(fbShader);
@@ -682,10 +710,14 @@ void Application::run()
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		glDrawElementsInstanced(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, NUM_CUBES);
-		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, xysquare::NUM_INDICES, GL_UNSIGNED_INT,
-													  (const void*)(cube::NUM_INDICES * sizeof(unsigned int)),
-													  1, cube::NUM_VERTS, NUM_CUBES + 1);
+		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, woodCubeModelInfo.indexCount, GL_UNSIGNED_INT,
+													  (const void*)(woodCubeModelInfo.eboOffset * sizeof(unsigned int)), 
+													  woodCubeModelInfo.instanceCount,
+													  woodCubeModelInfo.vboOffset, woodCubeModelInfo.instanceOffset);
+		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, floorModelInfo.indexCount, GL_UNSIGNED_INT,
+													  (const void*)(floorModelInfo.eboOffset * sizeof(unsigned int)), 
+													  floorModelInfo.instanceCount,
+													  floorModelInfo.vboOffset, floorModelInfo.instanceOffset);
 
 		glUseProgram(omniShadowMapShader);
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointLightRender.shadowCubeMap, 0);
@@ -695,10 +727,14 @@ void Application::run()
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		glDrawElementsInstanced(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0, NUM_CUBES);
-		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, xysquare::NUM_INDICES, GL_UNSIGNED_INT,
-													  (const void*)(cube::NUM_INDICES * sizeof(unsigned int)),
-													  1, cube::NUM_VERTS, NUM_CUBES + 1);
+		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, woodCubeModelInfo.indexCount, GL_UNSIGNED_INT,
+													  (const void*)(woodCubeModelInfo.eboOffset * sizeof(unsigned int)), 
+													  woodCubeModelInfo.instanceCount,
+													  woodCubeModelInfo.vboOffset, woodCubeModelInfo.instanceOffset);
+		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, floorModelInfo.indexCount, GL_UNSIGNED_INT,
+													  (const void*)(floorModelInfo.eboOffset * sizeof(unsigned int)), 
+													  floorModelInfo.instanceCount,
+													  floorModelInfo.vboOffset, floorModelInfo.instanceOffset);
 
 		//----------------------------------------
 
@@ -737,8 +773,9 @@ void Application::run()
 
 		uniforms.setUniform(shader, "u_materialShininess", cubeShininess);
 		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, woodCubeModelInfo.indexCount, GL_UNSIGNED_INT,
-														   (const void*)woodCubeModelInfo.eboOffset, woodCubeModelInfo.instanceCount,
-														   woodCubeModelInfo.vboOffset, woodCubeModelInfo.instanceOffset);
+													  (const void*)(woodCubeModelInfo.eboOffset * sizeof(unsigned int)), 
+													  woodCubeModelInfo.instanceCount,
+													  woodCubeModelInfo.vboOffset, woodCubeModelInfo.instanceOffset);
 
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, lightCubeModelInfo.emissiveMapID);
@@ -755,7 +792,8 @@ void Application::run()
 
 		uniforms.setUniform(shader, "u_emissiveStrength", lightCubeEmissiveStrength);
 		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, lightCubeModelInfo.indexCount, GL_UNSIGNED_INT,
-													  (const void*)lightCubeModelInfo.eboOffset, lightCubeModelInfo.instanceCount,
+													  (const void*)(lightCubeModelInfo.eboOffset * sizeof(unsigned int)), 
+													  lightCubeModelInfo.instanceCount,
 													  lightCubeModelInfo.vboOffset, lightCubeModelInfo.instanceOffset);
 
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
@@ -773,8 +811,9 @@ void Application::run()
 		uniforms.setUniform(shader, "u_heightScale", floorHeightScale);
 		glDisable(GL_CULL_FACE);
 		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, floorModelInfo.indexCount, GL_UNSIGNED_INT,
-														   (const void*)floorModelInfo.eboOffset, floorModelInfo.instanceCount,
-														   floorModelInfo.vboOffset, floorModelInfo.instanceOffset);
+													  (const void*)(floorModelInfo.eboOffset * sizeof(unsigned int)), 
+													  floorModelInfo.instanceCount,
+													  floorModelInfo.vboOffset, floorModelInfo.instanceOffset);
 
 		glUseProgram(skyboxShader);
 		glDrawElements(GL_TRIANGLES, cube::NUM_INDICES, GL_UNSIGNED_INT, (const void*)0);

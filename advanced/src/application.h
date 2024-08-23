@@ -34,7 +34,7 @@ struct TextureParameterSet
 struct ModelInfo
 {
 	unsigned int indexCount;
-	unsigned int eboOffset;
+	size_t eboOffset;
 	int vboOffset;
 	unsigned int instanceCount;
 	unsigned int instanceOffset;
@@ -47,21 +47,16 @@ private :
 	void addLightUniforms();
 	void initLightStructsAndMatrices();
 	void createLightShadowMaps();
-
 	void addTextureUniforms();
-
 	size_t createVBO();
 	void createEBO();
-
 	void initObjectTransforms();
 	void createObjectTransformVBO();
+	void setModelInfos();
 	void createMatrixUBO();
 	void createTextureMaps();
-
 	void createPostProcessFBO();
-
 	void setVAOFormatsAndBuffers(size_t vboSize);
-
 	void setUniforms();
 
 	static constexpr int FB_COLOR_TEXTURE_UNIT = 0,
@@ -116,11 +111,6 @@ private :
 	unsigned int blackTexture, whiteTexture, defaultNormalTexture;
 	unsigned int skybox;
 	unsigned int textureWriteFBO;
-	unsigned int cubeDiffuseTexture, floorDiffuseTexture;
-	unsigned int cubeSpecularTexture, floorSpecularTexture;
-	unsigned int lightCubeEmissiveTexture;
-	unsigned int floorNormalTexture;
-	unsigned int floorDispTexture;
 	float cubeShininess, floorShininess, floorHeightScale, lightCubeEmissiveStrength;
 
 	DirectionalLightRender dirLightRender;

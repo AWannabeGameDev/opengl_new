@@ -56,7 +56,7 @@ vec2 displaceTexCoord(vec2 texCoord)
 	vec2 fullOffset = (transpose(TBNMatrix) * normalize(u_viewPos - fragWorldCoord)).xy * u_heightScale;
 
 	vec2 deltaOffset = fullOffset / u_numDispLayers;
-	float deltaDepth = 1.0f / numLayers;
+	float deltaDepth = 1.0f / u_numDispLayers;
 
 	vec2 currentOffset = vec2(0.0f);
 	float currentDepth = 0.0f;

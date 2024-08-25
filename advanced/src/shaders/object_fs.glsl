@@ -37,6 +37,7 @@ uniform sampler2D u_normal;
 uniform sampler2D u_displacement;
 uniform float u_materialShininess;
 uniform float u_heightScale;
+uniform int u_numDispLayers;
 uniform float u_emissiveStrength;
 
 uniform DirectionalLight u_dirLight;
@@ -52,11 +53,38 @@ out vec4 fragColor;
 
 vec2 displaceTexCoord(vec2 texCoord)
 {
-	float height = texture(u_displacement, texCoord).r;
-	vec3 TBNviewDir = transpose(TBNMatrix) * normalize(u_viewPos - fragWorldCoord);
+	vec2 fullOffset = (transpose(TBNMatrix) * normalize(u_viewPos - fragWorldCoord)).xy * u_heightScale;
 
-	vec2 offset = TBNviewDir.xy / TBNviewDir.z * height * u_heightScale;
-	return texCoord - offset;
+	vec2 deltaOffset = fullOffset / u_numDispLayers;
+	float deltaDepth = 1.0f / numLayers;
+
+	vec2 currentOffset = vec2(0.0f);
+	float currentDepth = 0.0f;
+	float currentDepthMapValue = texture(u_displacement, texCoord).r;
+
+	while(currentDepth < currentDepthMapValue)
+	{
+		currentOffset += deltaOffset;
+		currentDepth += deltaDepth;
+		currentDepthMapValue = texture(u_displacement, texCoord - currentOffset).r;
+	}
+
+	vec2 prevOffset = currentOffset - deltaOffset;
+	float prevDepthMapValue = texture(u_displacement, texCoord - prevOffset).r;
+
+	float currentDepthMapDelta = currentDepth - currentDepthMapValue;
+	float prevDepthMapDelta = prevDepthMapValue - currentDepth;
+
+	// This will happen when displacement map is flat (all zeroes)
+	if((prevDepthMapDelta + currentDepthMapDelta) == 0)
+	{
+		return texCoord;
+	}
+
+	vec2 actualOffset = ((currentDepthMapDelta * prevOffset) + (prevDepthMapDelta * currentOffset)) / 
+						(currentDepthMapDelta + prevDepthMapDelta);
+
+	return texCoord - actualOffset;
 }
 
 vec2 dispTexCoord = displaceTexCoord(texCoord); 

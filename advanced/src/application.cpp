@@ -114,6 +114,7 @@ void Application::addTextureUniforms()
 	uniforms.addUniform(shader, "u_displacement");
 	uniforms.addUniform(shader, "u_materialShininess");
 	uniforms.addUniform(shader, "u_heightScale");
+	uniforms.addUniform(shader, "u_numDispLayers");
 	uniforms.addUniform(shader, "u_emissiveStrength");
 
 	uniforms.addUniform(skyboxShader, "u_skybox");
@@ -131,10 +132,10 @@ void Application::initLightStructsAndMatrices()
 	dirLightRender.matrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
 
-	maxBrightDiffuseColor = {0.0f, 0.9f, 0.9f};
-	maxBrightSpecularColor = {0.0f, 0.5f, 0.5f};
+	maxBrightDiffuseColor = {0.0f, 1.0f, 1.0f};
+	maxBrightSpecularColor = {0.0f, 0.2f, 0.2f};
 
-	pointLightRender.source.position = {0.0f, 2.0f, 0.0f};
+	pointLightRender.source.position = {0.0f, 0.5f, 0.0f};
 	pointLightRender.source.diffuseColor = maxBrightDiffuseColor;
 	pointLightRender.source.specularColor = maxBrightSpecularColor;
 	pointLightRender.source.attenConst = 1.0f;
@@ -327,9 +328,10 @@ void Application::createMatrixUBO()
 void Application::createTextureMaps()
 {
 	cubeShininess = 128.0f; 
-	floorShininess = 16.0f;
+	floorShininess = 32.0f;
 	lightCubeEmissiveStrength = 1.0f;
-	floorHeightScale = 0.6f;
+	floorHeightScale = 0.1f;
+	numDispLayers = 10;
 
 	TextureParameterSet texParams;
 	texParams.minFilter = GL_LINEAR_MIPMAP_LINEAR;
@@ -341,10 +343,10 @@ void Application::createTextureMaps()
 	woodCubeModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/container_diffuse.png", true);
 	woodCubeModelInfo.specularMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/container_specular.png", true);
 
-	floorModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/bricks2_diffuse.jpg", true);
+	floorModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/bricks2_diffuse.jpg", false);
 	//floorSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_specular.png", true);
-	floorModelInfo.normalMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_normal.jpg", true);
-	floorModelInfo.dispMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_displacement.jpg", true);
+	floorModelInfo.normalMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_normal.jpg", false);
+	floorModelInfo.dispMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_displacement.jpg", false);
 
 	texParams.minFilter = GL_LINEAR;
 	texParams.magFilter = GL_LINEAR;
@@ -408,7 +410,7 @@ void Application::createTextureMaps()
 	lightCubeModelInfo.normalMapID = defaultNormalTexture;
 	lightCubeModelInfo.dispMapID = blackTexture;
 
-	floorModelInfo.specularMapID = blackTexture;
+	floorModelInfo.specularMapID = whiteTexture;
 	floorModelInfo.emissiveMapID = blackTexture;
 }
 
@@ -692,6 +694,8 @@ void Application::run()
 		}
 		pointLightRender.positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRender.source.position);
 
+		// TODO: Update vertex data of light cube position
+
 		//----------------------------------------
 
 		glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
@@ -788,8 +792,6 @@ void Application::run()
 		glActiveTexture(GL_TEXTURE0 + DISPLACEMENT_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, lightCubeModelInfo.dispMapID);
 
-		// TODO: Update vertex data of light cube position
-
 		uniforms.setUniform(shader, "u_emissiveStrength", lightCubeEmissiveStrength);
 		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, lightCubeModelInfo.indexCount, GL_UNSIGNED_INT,
 													  (const void*)(lightCubeModelInfo.eboOffset * sizeof(unsigned int)), 
@@ -809,6 +811,7 @@ void Application::run()
 
 		uniforms.setUniform(shader, "u_materialShininess", floorShininess);
 		uniforms.setUniform(shader, "u_heightScale", floorHeightScale);
+		uniforms.setUniform(shader, "u_numDispLayers", numDispLayers);
 		glDisable(GL_CULL_FACE);
 		glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, floorModelInfo.indexCount, GL_UNSIGNED_INT,
 													  (const void*)(floorModelInfo.eboOffset * sizeof(unsigned int)), 

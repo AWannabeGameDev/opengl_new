@@ -111,7 +111,7 @@ private :
 	unsigned int blackTexture, whiteTexture, defaultNormalTexture;
 	unsigned int skybox;
 	unsigned int textureWriteFBO;
-	float cubeShininess, floorShininess, floorHeightScale, lightCubeEmissiveStrength;
+	float cubeShininess, floorShininess, floorHeightScale, numDispLayers, lightCubeEmissiveStrength;
 
 	DirectionalLightRender dirLightRender;
 	PointLightRender pointLightRender;

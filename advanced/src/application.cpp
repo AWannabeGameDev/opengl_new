@@ -133,7 +133,7 @@ void Application::initLightStructsAndMatrices()
 		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
 
 	maxBrightDiffuseColor = {0.0f, 1.0f, 1.0f};
-	maxBrightSpecularColor = {0.0f, 0.2f, 0.2f};
+	maxBrightSpecularColor = {0.0f, 0.4f, 0.4f};
 
 	pointLightRender.source.position = {0.0f, 0.5f, 0.0f};
 	pointLightRender.source.diffuseColor = maxBrightDiffuseColor;
@@ -258,19 +258,14 @@ void Application::initObjectTransforms()
 	srand((unsigned int)time(0));
 	for(glm::mat4& cubeTransformMat : cubeTransformMats)
 	{
-		Transform cubeTransform{};
-		cubeTransform.position = {randrange(-9.5f, 9.5f), 0.50f, randrange(-9.5f, 9.5f)};
-		cubeTransformMat = cubeTransform.matrix();
+		cubeTransformMat = glm::translate(glm::mat4{1.0f}, glm::vec3{randrange(-9.5f, 9.5f), 0.50f, randrange(-9.5f, 9.5f)});
 	}
-	Transform lightCubeTransform{};
-	lightCubeTransform.scale = {0.25f, 0.25f, 0.25f};
-	lightCubeTransform.position = pointLightRender.source.position;
-	lightCubeTransformMat = lightCubeTransform.matrix();
+	
+	lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightRender.source.position) * 
+							glm::scale(glm::mat4{1.0f}, glm::vec3{0.25f, 0.25f, 0.25f});
 
-	Transform floorTransform{};
-	floorTransform.scale = {floorWidth, floorWidth, 1.0f};
-	floorTransform.rotation = glm::angleAxis(glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f});
-	floorTransformMat = floorTransform.matrix();
+	floorTransformMat = glm::rotate(glm::mat4{1.0f}, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f}) * 
+						glm::scale(glm::mat4{1.0f}, glm::vec3{floorWidth, floorWidth, 1.0f});
 }
 
 void Application::createObjectTransformVBO()
@@ -330,7 +325,7 @@ void Application::createTextureMaps()
 	cubeShininess = 128.0f; 
 	floorShininess = 32.0f;
 	lightCubeEmissiveStrength = 1.0f;
-	floorHeightScale = 0.1f;
+	floorHeightScale = 0.07f;
 	numDispLayers = 10;
 
 	TextureParameterSet texParams;
@@ -694,7 +689,12 @@ void Application::run()
 		}
 		pointLightRender.positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRender.source.position);
 
-		// TODO: Update vertex data of light cube position
+		lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightRender.source.position) * 
+								glm::scale(glm::mat4{1.0f}, glm::vec3{0.25f, 0.25f, 0.25f});
+
+		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, lightCubeModelInfo.instanceOffset * sizeof(glm::mat4), sizeof(glm::mat4), 
+						&lightCubeTransformMat);
 
 		//----------------------------------------
 

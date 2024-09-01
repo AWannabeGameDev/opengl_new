@@ -28,6 +28,8 @@ private :
 	UnrolledList<std::string> names;
 	std::unordered_map<std::pair<unsigned int, std::string_view>, int> nameToLocation;
 
+	int getUniformLocation(unsigned int shaderID, std::string_view fieldName);
+
 public :
 	UniformSetter();
 

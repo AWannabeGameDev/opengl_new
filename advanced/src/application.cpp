@@ -1,85 +1,13 @@
 #include "application.h"
 #include <utility/raw_model_data.h>
 #include <ctime>
-#include <utility/stb_image.h>
+#include <utility/texture.h>
 #include <format>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 #include "struct_uniform_util.h"
 
 using namespace models;
-
-unsigned int createTexture(unsigned int target, const TextureParameterSet& texParams, 
-						   unsigned int format, std::string_view path, bool flip, 
-						   int width = 0, int height = 0)
-{
-	unsigned int texID;
-	glGenTextures(1, &texID);
-	glBindTexture(target, texID);
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
-	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
-	glTexParameteri(target, GL_TEXTURE_WRAP_S, texParams.texWrapS);
-	glTexParameteri(target, GL_TEXTURE_WRAP_T, texParams.texWrapT);
-	glTexParameteri(target, GL_TEXTURE_WRAP_R, texParams.texWrapR);
-
-	if((width == 0) && (height == 0))
-	{
-		TextureData texInfo{loadTexture(path, flip)};
-		glTexImage2D(target, 0, format, texInfo.width, texInfo.height, 0, texInfo.format, GL_UNSIGNED_BYTE, texInfo.data);
-		stbi_image_free(texInfo.data);
-	}
-	else
-	{
-		glTexImage2D(target, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
-	}
-
-	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
-	{
-		glGenerateMipmap(target);
-	}
-
-	return texID;
-}
-
-unsigned int createCubemap(const TextureParameterSet& texParams, 
-						   unsigned int format, std::string_view paths[6], bool flip,
-						   int width = 0, int height = 0)
-{
-	unsigned int texID;
-	glGenTextures(1, &texID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, texParams.texWrapS);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, texParams.texWrapT);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, texParams.texWrapR);
-
-	if((width == 0) && (height == 0))
-	{
-		for(size_t i = 0; i < 6; i++)
-		{
-			TextureData texInfo{loadTexture(paths[i], flip)};
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, 
-						 texInfo.width, texInfo.height, 0, texInfo.format, GL_UNSIGNED_BYTE, texInfo.data);
-			stbi_image_free(texInfo.data);
-		}
-	}
-	else
-	{
-		for(unsigned int i = 0; i < 6; i++)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, 
-						 width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
-		}
-	}
-
-	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
-	{
-		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	}
-
-	return texID;
-}
 
 void Application::addLightUniforms()
 {
@@ -411,14 +339,17 @@ void Application::createTextureMaps()
 
 void Application::createPostProcessFBO()
 {
-	glGenTextures(1, &fbColorTexture);
+	TextureParameterSet texParams =
+	{
+		.minFilter = GL_LINEAR,
+		.magFilter = GL_LINEAR,
+		.texWrapS = GL_CLAMP_TO_EDGE,
+		.texWrapT = GL_CLAMP_TO_EDGE,
+		.texWrapR = GL_CLAMP_TO_EDGE
+	};
+
 	glActiveTexture(GL_TEXTURE0 + FB_COLOR_TEXTURE_UNIT);
-	glBindTexture(GL_TEXTURE_2D, fbColorTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	fbColorTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGBA16F, "", false, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
@@ -679,22 +610,23 @@ void Application::run()
 			lightCubeEmissiveStrength -= pointLightBrightnessSpeed * deltaTime;
 		}
 
+		glm::vec3 pointLightMove{};
 		if(keys.keyPressed("LIGHT_UP"))
 		{
-			pointLightRender.source.position.y += pointLightMoveSpeed * deltaTime;
+			pointLightMove.y = pointLightMoveSpeed * deltaTime;
 		}
 		else if(keys.keyPressed("LIGHT_DOWN"))
 		{
-			pointLightRender.source.position.y -= pointLightMoveSpeed * deltaTime; 
+			pointLightMove.y = -pointLightMoveSpeed * deltaTime;
 		}
+		pointLightRender.source.position += pointLightMove;
 		pointLightRender.positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRender.source.position);
 
-		lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightRender.source.position) * 
-								glm::scale(glm::mat4{1.0f}, glm::vec3{0.25f, 0.25f, 0.25f});
+		lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightMove) * lightCubeTransformMat;
 
 		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
 		glBufferSubData(GL_ARRAY_BUFFER, lightCubeModelInfo.instanceOffset * sizeof(glm::mat4), sizeof(glm::mat4), 
-						&lightCubeTransformMat);
+						glm::value_ptr(lightCubeTransformMat));
 
 		//----------------------------------------
 

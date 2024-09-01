@@ -5,8 +5,8 @@
 #include <utility/keyboard_input.h>
 #include <utility/mouse_input.h>
 #include <utility/camera.h>
-#include <utility/transform.h>
 #include <utility/uniform_setter.h>
+#include <utility/lighting.h>
 
 struct PointLightRender
 {
@@ -23,12 +23,6 @@ struct DirectionalLightRender
 	unsigned int shadowMap;
 	glm::mat4 matrix;
 	DirectionalLight source;
-};
-
-struct TextureParameterSet
-{
-	unsigned int minFilter, magFilter;
-	unsigned int texWrapS, texWrapT, texWrapR;
 };
 
 struct ModelInfo
@@ -107,7 +101,6 @@ private :
 
 	ModelInfo woodCubeModelInfo, lightCubeModelInfo, floorModelInfo;
 
-	TextureParameterSet defaultTexParams;
 	unsigned int blackTexture, whiteTexture, defaultNormalTexture;
 	unsigned int skybox;
 	unsigned int textureWriteFBO;

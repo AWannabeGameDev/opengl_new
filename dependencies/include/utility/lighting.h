@@ -2,7 +2,6 @@
 #define LIGHT_H
 
 #include <glm/glm.hpp>
-#include "load_image.h"
 
 struct PointLight
 {

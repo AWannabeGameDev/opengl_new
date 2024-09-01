@@ -1,4 +1,6 @@
 #include "utility/keyboard_input.h"
+#include <stdexcept>
+#include <format>
 
 KeyboardInput::KeyboardInput(GLFWwindow* glfwWindow) : 
 	keyNameMap{}, keyStatusMap{}, window{glfwWindow}
@@ -17,6 +19,10 @@ void KeyboardInput::removeKeybind(std::string_view keyName)
 	{
 		keyStatusMap.erase(it->second);
 		keyNameMap.erase(it);
+	}
+	else
+	{
+		throw std::invalid_argument{std::format("The keybind for {} does not exist.", keyName)};
 	}
 }
 
@@ -42,7 +48,7 @@ bool KeyboardInput::keyJustPressed(std::string_view keyName) const
 	}
 	else
 	{
-		return false;
+		throw std::invalid_argument{std::format("The keybind for {} does not exist.", keyName)};
 	}
 }
 
@@ -56,7 +62,7 @@ bool KeyboardInput::keyPressed(std::string_view keyName) const
 	}
 	else
 	{
-		return false;
+		throw std::invalid_argument{std::format("The keybind for {} does not exist.", keyName)};
 	}
 }
 
@@ -70,7 +76,7 @@ bool KeyboardInput::keyJustReleased(std::string_view keyName) const
 	}
 	else
 	{
-		return false;
+		throw std::invalid_argument{std::format("The keybind for {} does not exist.", keyName)};
 	}
 }
 
@@ -84,7 +90,7 @@ bool KeyboardInput::keyReleased(std::string_view keyName) const
 	}
 	else
 	{
-		return false;
+		throw std::invalid_argument{std::format("The keybind for {} does not exist.", keyName)};
 	}
 }
 

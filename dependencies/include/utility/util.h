@@ -5,7 +5,6 @@
 #include <GLFW/glfw3.h>
 #include <string_view>
 #include <glm/glm.hpp>
-#include <utility/lighting.h>
 
 void glDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, 
 					 GLsizei length, const GLchar* message, const void* userParam);

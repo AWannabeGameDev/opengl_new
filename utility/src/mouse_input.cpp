@@ -1,4 +1,5 @@
 #include "utility/mouse_input.h"
+#include <stdexcept>
 
 MouseInput::MouseInput(GLFWwindow* window) :
 	window{window}
@@ -17,6 +18,10 @@ void MouseInput::removeButtonBind(std::string_view buttonName)
 	{
 		buttonStatusMap.erase(it->second);
 		buttonNameMap.erase(it);
+	}
+	else
+	{
+		throw std::invalid_argument{"The given buttonbind does not exist."};
 	}
 }
 
@@ -46,7 +51,7 @@ bool MouseInput::buttonPressed(std::string_view buttonName) const
 	}
 	else
 	{
-		return false;
+		throw std::invalid_argument{"The given buttonbind does not exist."};
 	}
 }
 
@@ -60,7 +65,7 @@ bool MouseInput::buttonJustPressed(std::string_view buttonName) const
 	}
 	else
 	{
-		return false;
+		throw std::invalid_argument{"The given buttonbind does not exist."};
 	}
 }
 
@@ -74,7 +79,7 @@ bool MouseInput::buttonReleased(std::string_view buttonName) const
 	}
 	else
 	{
-		return false;
+		throw std::invalid_argument{"The given buttonbind does not exist."};
 	}
 }
 
@@ -88,7 +93,7 @@ bool MouseInput::buttonJustReleased(std::string_view buttonName) const
 	}
 	else
 	{
-		return false;
+		throw std::invalid_argument{"The given buttonbind does not exist."};
 	}
 }
 

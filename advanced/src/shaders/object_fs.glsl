@@ -40,6 +40,8 @@ uniform float u_heightScale;
 uniform int u_numDispLayers;
 uniform float u_emissiveStrength;
 
+const int MAX_DIR_LIGHTS = 10;
+const int MAX_POINT_LIGHTS = 100;
 uniform DirectionalLight u_dirLight;
 uniform PointLight u_pointLight;
 uniform float u_ambience;
@@ -69,6 +71,7 @@ vec2 displaceTexCoord(vec2 texCoord)
 		currentDepthMapValue = texture(u_displacement, texCoord - currentOffset).r;
 	}
 
+	/*
 	vec2 prevOffset = currentOffset - deltaOffset;
 	float prevDepthMapValue = texture(u_displacement, texCoord - prevOffset).r;
 
@@ -85,6 +88,9 @@ vec2 displaceTexCoord(vec2 texCoord)
 						(currentDepthMapDelta + prevDepthMapDelta);
 
 	return texCoord - actualOffset;
+	*/
+
+	return texCoord - currentOffset;
 }
 
 vec2 dispTexCoord = displaceTexCoord(texCoord); 

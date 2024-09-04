@@ -32,4 +32,21 @@ struct ConeLight
 	float attenQuad;
 };
 
+struct PointLightRender
+{
+	unsigned int shadowCubeMap;
+	glm::mat4 projMatrix;
+	glm::mat4 viewMatrices[6];
+	glm::mat4 positionMatrix;
+	float farPlane;
+	PointLight source;
+};
+
+struct DirectionalLightRender
+{
+	unsigned int shadowMap;
+	glm::mat4 matrix;
+	DirectionalLight source;
+};
+
 #endif

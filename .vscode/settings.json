@@ -12,6 +12,7 @@
         "functional": "cpp",
         "array": "cpp",
         "string": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "format": "cpp"
     }
 }

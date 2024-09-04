@@ -1,9 +1,8 @@
-#ifndef LOAD_H
-#define LOAD_H
+#ifndef TEXTURE_H
+#define TEXTURE_H
 
 #include <string_view>
 #include <utility/util.h>
-#include <utility/stb_image.h>
 
 struct TextureData
 {

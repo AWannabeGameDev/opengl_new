@@ -444,8 +444,8 @@ void Application::setUniforms()
 	uniforms.setUniform(shader, "u_emissive", EMISSIVE_TEXTURE_UNIT); // of the same size
 	uniforms.setUniform(shader, "u_normal", NORMAL_TEXTURE_UNIT);
 	uniforms.setUniform(shader, "u_displacement", DISPLACEMENT_TEXTURE_UNIT);
-	uniforms.setUniform(shader, "u_dirLightShadowMap", SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
-	uniforms.setUniform(shader, "u_pointLightShadowMap", SHADOW_MAP_TEXTURE_UNIT + 1); // Texture-arrays probably
+	uniforms.setUniform(shader, "u_dirLightShadowMap", DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
+	uniforms.setUniform(shader, "u_pointLightShadowMap", POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
 
 	glUseProgram(omniShadowMapShader);
 	uniforms.setUniform(omniShadowMapShader, "u_lightSpaceProjMatrix", pointLightRender.projMatrix);
@@ -691,9 +691,9 @@ void Application::run()
 		uniforms.setUniform(shader, "u_pointLight.specularColor", pointLightRender.source.specularColor);
 		uniforms.setUniform(shader, "u_pointLight.pos", pointLightRender.source.position);
 
-		glActiveTexture(GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
+		glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, dirLightRender.shadowMap);
-		glActiveTexture(GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT + 1);
+		glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, pointLightRender.shadowCubeMap);
 		
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);

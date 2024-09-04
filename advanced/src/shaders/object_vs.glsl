@@ -12,7 +12,11 @@ layout(std140) uniform mats
 	mat4 u_projection;
 };
 
-uniform mat4 u_dirLightSpaceMatrix;
+const int MAX_DIR_LIGHTS = 10;
+layout(std140) uniform dirLightMatrices
+{
+	mat4 u_dirLightSpaceMatrices[MAX_DIR_LIGHTS];
+}
 
 out vec4 fragDirLightSpaceCoord;
 

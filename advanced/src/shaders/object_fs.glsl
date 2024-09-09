@@ -28,7 +28,7 @@ struct ConeLight
 in vec2 texCoord;
 in mat3 TBNMatrix;
 in vec3 fragWorldCoord;
-in vec4 fragDirLightSpaceCoord;
+out vec4 fragDirLightSpaceCoords[MAX_DIR_LIGHTS];
 
 uniform sampler2D u_diffuse;
 uniform sampler2D u_specular;
@@ -45,15 +45,29 @@ const int MAX_POINT_LIGHTS = 100;
 
 layout(std140) uniform lights
 {
-	uniform DirectionalLight u_dirLights[MAX_DIR_LIGHTS];
-	uniform PointLight u_pointLights[MAX_POINT_LIGHTS];
-}
+	DirectionalLight u_dirLights[MAX_DIR_LIGHTS];
+	PointLight u_pointLights[MAX_POINT_LIGHTS];
+};
+
+layout(std140) uniform numDirLights
+{
+	int u_numDirLights;
+};
+
+layout(std140) uniform numPointLights
+{
+	int u_numPointLights;
+};
+
 uniform float u_ambience;
 uniform vec3 u_viewPos;
 
 uniform sampler2DArray u_dirLightShadowMaps;
 uniform samplerCubeArray u_pointLightShadowMaps;
-uniform float u_pointLightFarPlanes[MAX_POINT_LIGHTS];
+layout(std140) uniform pointLightFarPlane
+{
+	float u_pointLightFarPlane;
+};
 
 out vec4 fragColor;
 
@@ -178,7 +192,7 @@ void main()
 	fragColor.rgb += emissiveColor.rgb * u_emissiveStrength;
 	fragColor.a = diffuseColor.a;
 
-	for(int dirLightIdx = 0; dirLightIdx < MAX_DIR_LIGHTS; dirLightIdx++)
+	for(int dirLightIdx = 0; dirLightIdx < u_numDirLights; dirLightIdx++)
 	{
 		float dirLightShadowStrength = 0.0f;
 
@@ -199,14 +213,14 @@ void main()
 		fragColor.rgb += (1.0f - dirLightShadowStrength) * calcDirLight(u_dirLight[dirLightIdx], diffuseColor.rgb, specularColor.rgb);
 	}
 
-	for(int pointLightIdx = 0; pointLightIdx < MAX_POINT_LIGHTS; pointLightIdx++)
+	for(int pointLightIdx = 0; pointLightIdx < u_numPointLights; pointLightIdx++)
 	{
 		vec3 shadowSampleTexCoord = fragWorldCoord - u_pointLights[pointLightIdx].pos;
 		float depthBias = 0.001f * (1.0f - dot(normal, normalize(-shadowSampleTexCoord)));
 		
 		float pointLightShadowStrength = 0.0f;
 		float closestLightDepth = texture(u_pointLightShadowMaps[pointLightIdx], shadowSampleTexCoord).r;
-		float fragLightDepth = (length(shadowSampleTexCoord) / u_pointLightFarPlanes[pointLightIdx]) - depthBias;
+		float fragLightDepth = (length(shadowSampleTexCoord) / u_pointLightFarPlane) - depthBias;
 
 		if(fragLightDepth > closestLightDepth)
 		{

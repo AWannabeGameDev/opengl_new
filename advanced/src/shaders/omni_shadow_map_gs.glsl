@@ -1,27 +1,41 @@
 #version 460 core
 
-layout(triangles) in;
-layout(triangle_strip, max_vertices = 18) out;
+const int MAX_POINT_LIGHTS = 100;
 
-uniform mat4 u_lightSpaceProjMatrix;
-uniform mat4 u_lightSpaceViewMatrices[6];
-uniform mat4 u_lightSpacePositionMatrix;
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 18 * MAX_POINT_LIGHTS) out;
+
+layout(std140) uniform pointLightMatrices
+{
+	mat4 u_lightSpaceProjMatrix;
+	mat4 u_lightSpaceViewMatrices[6];
+	mat4 u_lightSpacePositionMatrices[MAX_POINT_LIGHTS];
+};
+
+layout(std140) uniform numPointLights
+{
+	int u_numPointLights;
+};
 
 out vec3 fragViewCoord;
 
 void main()
 {
-	for(int face = 0; face < 6; face++)
+	for(int pointLightIdx = 0; pointLightIdx < u_numPointLights; pointLightIdx++)
 	{
-		gl_Layer = face;
-
-		for(int i = 0; i < 3; i++)
+		for(int face = 0; face < 6; face++)
 		{
-			fragViewCoord = (u_lightSpaceViewMatrices[face] * u_lightSpacePositionMatrix * gl_in[i].gl_Position).xyz;
-			gl_Position = u_lightSpaceProjMatrix * vec4(fragViewCoord, 1.0f);
-			EmitVertex();
-		}
+			gl_Layer = (6 * pointLightIdx) + face;
 
-		EndPrimitive();
+			for(int i = 0; i < 3; i++)
+			{
+				fragViewCoord = (u_lightSpaceViewMatrices[face] * 
+								 u_lightSpacePositionMatrices[pointLightIdx] * gl_in[i].gl_Position).xyz;
+				gl_Position = u_lightSpaceProjMatrix * vec4(fragViewCoord, 1.0f);
+				EmitVertex();
+			}
+
+			EndPrimitive();
+		}
 	}
 }

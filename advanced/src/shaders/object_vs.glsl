@@ -16,9 +16,14 @@ const int MAX_DIR_LIGHTS = 10;
 layout(std140) uniform dirLightMatrices
 {
 	mat4 u_dirLightSpaceMatrices[MAX_DIR_LIGHTS];
-}
+};
 
-out vec4 fragDirLightSpaceCoord;
+layout(std140) uniform numDirLights
+{
+	int u_numDirLights;
+};
+
+out vec4 fragDirLightSpaceCoords[MAX_DIR_LIGHTS];
 
 out vec2 texCoord;
 out mat3 TBNMatrix;
@@ -29,7 +34,11 @@ void main()
 	fragWorldCoord = vec3(v_model * vec4(v_position, 1.0f));
 	gl_Position = u_projection * u_view * vec4(fragWorldCoord, 1.0f);
 	texCoord = v_texCoord;
-	fragDirLightSpaceCoord = u_dirLightSpaceMatrix * vec4(fragWorldCoord, 1.0f);
+
+	for(int dirLightIdx = 0; dirLightIdx < u_numDirLights; dirLightIdx++)
+	{
+		fragDirLightSpaceCoords[dirLightIdx] = u_dirLightSpaceMatrices[dirLightIdx] * vec4(fragWorldCoord, 1.0f);
+	}
 
 	vec3 normal = normalize(vec3(v_model * vec4(v_normal, 0.0f)));
 	vec3 tangent = normalize(vec3(v_model * vec4(v_tangent, 0.0f)));

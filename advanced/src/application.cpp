@@ -6,28 +6,14 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 #include "struct_uniform_util.h"
+#include "constants.h"
 
 using namespace models;
 
 void Application::addLightUniforms()
 {
-	addDirLightUniforms(uniforms, shader, "u_dirLight");
-	uniforms.addUniform(dirShadowMapShader, "u_lightSpaceMatrix");
-	uniforms.addUniform(shader, "u_dirLightSpaceMatrix");
-	uniforms.addUniform(shader, "u_dirLightShadowMap");
-	uniforms.addUniform(shader, "u_pointLightFarPlane");
-
-	addPointLightUniforms(uniforms, shader, "u_pointLight");
-	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceViewMatrices[0]");
-	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceViewMatrices[1]");
-	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceViewMatrices[2]");
-	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceViewMatrices[3]");
-	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceViewMatrices[4]");
-	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceViewMatrices[5]");
-	uniforms.addUniform(omniShadowMapShader, "u_lightSpaceProjMatrix");
-	uniforms.addUniform(omniShadowMapShader, "u_lightSpacePositionMatrix");
-	uniforms.addUniform(omniShadowMapShader, "u_farPlane");
-	uniforms.addUniform(shader, "u_pointLightShadowMap");
+	uniforms.addUniform(shader, "u_dirLightShadowMaps");
+	uniforms.addUniform(shader, "u_pointLightShadowMaps");
 
 	uniforms.addUniform(shader, "u_viewPos");
 	uniforms.addUniform(shader, "u_ambience");
@@ -51,7 +37,11 @@ void Application::addTextureUniforms()
 
 void Application::initLightStructsAndMatrices()
 {
+	// Work here : port back from light-render structs
+
 	ambience = 0.1f;
+
+	DirectionalLightRender& dirLightRender = dirLightRenders.emplace_back();
 
 	dirLightRender.source.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
 	dirLightRender.source.diffuseColor = glm::vec3{0.6f, 0.6f, 0.6f};
@@ -63,6 +53,8 @@ void Application::initLightStructsAndMatrices()
 	maxBrightDiffuseColor = {0.0f, 1.0f, 1.0f};
 	maxBrightSpecularColor = {0.0f, 0.4f, 0.4f};
 
+	PointLightRender& pointLightRender = pointLightRenders.emplace_back();
+
 	pointLightRender.source.position = {0.0f, 0.5f, 0.0f};
 	pointLightRender.source.diffuseColor = maxBrightDiffuseColor;
 	pointLightRender.source.specularColor = maxBrightSpecularColor;
@@ -70,7 +62,7 @@ void Application::initLightStructsAndMatrices()
 	pointLightRender.source.attenLin = 0.045f;
 	pointLightRender.source.attenQuad = 0.0075f;
 
-	pointLightRender.farPlane = 20.0f;
+	pointLightFarPlane = 20.0f;
 	pointLightRender.projMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, pointLightRender.farPlane);
 	pointLightRender.positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRender.source.position);
 
@@ -108,10 +100,15 @@ void Application::createLightShadowMaps()
 	shadowMapParams.texWrapT = GL_CLAMP_TO_BORDER;
 	shadowMapParams.texWrapR = GL_CLAMP_TO_BORDER;
 
-	dirLightRender.shadowMap = createTexture(GL_TEXTURE_2D, shadowMapParams, GL_DEPTH_COMPONENT, "", false, 
-											 SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
-	pointLightRender.shadowCubeMap = createCubemap(shadowMapParams, GL_DEPTH_COMPONENT, {}, false, 
-												   SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+	dirLightsShadowMapArray = createTexture(GL_TEXTURE_2D, shadowMapParams, GL_DEPTH_COMPONENT, 
+											SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_DIR_LIGHTS);
+	pointLightsShadowMapArray = createCubemap(shadowMapParams, GL_DEPTH_COMPONENT, 
+												   SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_POINT_LIGHTS);
+
+	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT);
+	glBindTexture(GL_TEXTURE_2D, dirLightsShadowMapArray);
+	glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, pointLightsShadowMapArray);												   
 }
 
 size_t Application::createVBO()
@@ -181,6 +178,8 @@ void Application::createEBO()
 
 void Application::initObjectTransforms()
 {
+	// Later work here : multiple light cubes
+
 	floorWidth = 20.0f;
 
 	srand((unsigned int)time(0));
@@ -189,7 +188,7 @@ void Application::initObjectTransforms()
 		cubeTransformMat = glm::translate(glm::mat4{1.0f}, glm::vec3{randrange(-9.5f, 9.5f), 0.50f, randrange(-9.5f, 9.5f)});
 	}
 	
-	lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightRender.source.position) * 
+	lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightRenders[0].source.position) * 
 							glm::scale(glm::mat4{1.0f}, glm::vec3{0.25f, 0.25f, 0.25f});
 
 	floorTransformMat = glm::rotate(glm::mat4{1.0f}, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f}) * 
@@ -198,6 +197,8 @@ void Application::initObjectTransforms()
 
 void Application::createObjectTransformVBO()
 {
+	// Later work here : add texture maps as part of model info
+
 	using std::byte;
 
 	std::vector<byte> instanceVBOVector;
@@ -236,16 +237,68 @@ void Application::setModelInfos()
 
 void Application::createMatrixUBO()
 {
-	matsUniformBinding = 0;
+	// Work here : Figure out alignment stuff
 
 	glGenBuffers(1, &matsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, matsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(camera.projectionMatrix()));
 
-	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "mats"), matsUniformBinding);
-	glUniformBlockBinding(skyboxShader, glGetUniformBlockIndex(skyboxShader, "mats"), matsUniformBinding);
-	glBindBufferBase(GL_UNIFORM_BUFFER, matsUniformBinding, matsUBO);
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "mats"), CAM_MATS_UNI_BINDING);
+	glUniformBlockBinding(skyboxShader, glGetUniformBlockIndex(skyboxShader, "mats"), CAM_MATS_UNI_BINDING);
+	glBindBufferBase(GL_UNIFORM_BUFFER, CAM_MATS_UNI_BINDING, matsUBO);
+
+	glGenBuffers(1, &lightsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_DYNAMIC_DRAW);
+	//glBufferSubData();
+
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "lights"), LIGHTS_UNI_BINDING);
+	glBindBufferBase(GL_UNIFORM_BUFFER, LIGHTS_UNI_BINDING, lightsUBO);
+
+	glGenBuffers(1, &numDirLightsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, numDirLightsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_DYNAMIC_DRAW);
+	int* numDirLightsPtr = (int*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	*numDirLightsPtr = dirLightRenders.size();
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "numDirLights"), NUM_DIRLIGHTS_UNI_BINDING);
+	glBindBufferBase(GL_UNIFORM_BUFFER, NUM_DIRLIGHTS_UNI_BINDING, numDirLightsUBO);
+
+	glGenBuffers(1, &numPointLightsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, numPointLightsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_DYNAMIC_DRAW);
+	int* numPointLightsPtr = (int*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	*numPointLightsPtr = pointLightRenders.size();
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "numPointLights"), NUM_POINTLIGHTS_UNI_BINDING);
+	glBindBufferBase(GL_UNIFORM_BUFFER, NUM_POINTLIGHTS_UNI_BINDING, numPointLightsUBO);
+
+	glGenBuffers(1, &dirLightMatricesUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, dirLightMatricesUBO);
+	glBufferData(GL_UNIFORM_BUFFER, MAX_DIR_LIGHTS * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+	//glBufferSubData(); Do once dirlight matrices are separated from DirLightRender struct
+
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "dirLightMatrices"), DIRLIGHT_MATRICES_UNI_BINDING);
+	glBindBufferBase(GL_UNIFORM_BUFFER, DIRLIGHT_MATRICES_UNI_BINDING, dirLightMatricesUBO);
+
+	glGenBuffers(1, &pointLightMatricesUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
+	glBufferData(GL_UNIFORM_BUFFER, MAX_POINT_LIGHTS * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+	//glBufferSubData(); Do once pointlight matrices are separated from PointLightRender struct
+
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "pointLightMatrices"), POINTLIGHT_MATRICES_UNI_BINDING);
+	glBindBufferBase(GL_UNIFORM_BUFFER, POINTLIGHT_MATRICES_UNI_BINDING, pointLightMatricesUBO);
+
+	glGenBuffers(1, &pointLightFarPlaneUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, pointLightFarPlaneUBO);
+	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_STATIC_DRAW);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float), &pointLightFarPlane);
+
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "pointLightFarPlane"), POINTLIGHT_FARPLANE_UNI_BINDING);
+	glBindBufferBase(GL_UNIFORM_BUFFER, POINTLIGHT_FARPLANE_UNI_BINDING, pointLightFarPlaneUBO);
 }
 
 void Application::createTextureMaps()
@@ -294,18 +347,18 @@ void Application::createTextureMaps()
 	texParams.texWrapT = GL_REPEAT;
 	texParams.texWrapR = GL_REPEAT;
 
-	blackTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
-	whiteTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
-	lightCubeModelInfo.emissiveMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
-	defaultNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "", false, 1, 1);
+	blackTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, 1, 1);
+	whiteTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, 1, 1);
+	lightCubeModelInfo.emissiveMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, 1, 1);
+	defaultNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, 1, 1);
 
 	glGenFramebuffers(1, &textureWriteFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
 	glViewport(0, 0, 1, 1);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lightCubeModelInfo.emissiveMapID, 0);
-	glClearColor(pointLightRender.source.diffuseColor.r,
-				 pointLightRender.source.diffuseColor.g, pointLightRender.source.diffuseColor.b, 0.0f);
+	glClearColor(pointLightRenders[0].source.diffuseColor.r,
+				 pointLightRenders[0].source.diffuseColor.g, pointLightRenders[0].source.diffuseColor.b, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blackTexture, 0);
@@ -349,7 +402,7 @@ void Application::createPostProcessFBO()
 	};
 
 	glActiveTexture(GL_TEXTURE0 + FB_COLOR_TEXTURE_UNIT);
-	fbColorTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGBA16F, "", false, SCREEN_WIDTH, SCREEN_HEIGHT);
+	fbColorTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
@@ -435,26 +488,15 @@ void Application::setVAOFormatsAndBuffers(size_t vboSize)
 void Application::setUniforms()
 {
 	glUseProgram(shader);
-	setDirLightUniform(uniforms, shader, "u_dirLight", dirLightRender.source); // Should be done in render loop if dynamic
-	setPointLightUniform(uniforms, shader, "u_pointLight", pointLightRender.source); // Should be done in 
-																					 // render loop if dynamic
+
 	uniforms.setUniform(shader, "u_ambience", ambience);
 	uniforms.setUniform(shader, "u_diffuse", DIFFUSE_TEXTURE_UNIT);   // These five can
 	uniforms.setUniform(shader, "u_specular", SPECULAR_TEXTURE_UNIT); // have texture-arrays
 	uniforms.setUniform(shader, "u_emissive", EMISSIVE_TEXTURE_UNIT); // of the same size
 	uniforms.setUniform(shader, "u_normal", NORMAL_TEXTURE_UNIT);
 	uniforms.setUniform(shader, "u_displacement", DISPLACEMENT_TEXTURE_UNIT);
-	uniforms.setUniform(shader, "u_dirLightShadowMap", DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
-	uniforms.setUniform(shader, "u_pointLightShadowMap", POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
-
-	glUseProgram(omniShadowMapShader);
-	uniforms.setUniform(omniShadowMapShader, "u_lightSpaceProjMatrix", pointLightRender.projMatrix);
-	for(int i = 0; i < 6; i++)
-	{
-		uniforms.setUniform(omniShadowMapShader, std::format("u_lightSpaceViewMatrices[{}]", i), 
-							pointLightRender.viewMatrices[i]);
-	}
-	uniforms.setUniform(omniShadowMapShader, "u_farPlane", pointLightRender.farPlane);
+	uniforms.setUniform(shader, "u_dirLightShadowMaps", DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
+	uniforms.setUniform(shader, "u_pointLightShadowMaps", POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
 
 	glUseProgram(skyboxShader);
 	uniforms.setUniform(skyboxShader, "u_skybox", SKYBOX_TEXTURE_UNIT);
@@ -596,17 +638,19 @@ void Application::run()
 			camera.rotateGlobal(camRight, mouseMoveY * camSensitivity * deltaTime);
 		}
 
+		// Work here : separate light source from light-render struct
+
 		if(keys.keyPressed("LIGHT_BRIGHT") && 
-		   (glm::length(pointLightRender.source.diffuseColor) < glm::length(maxBrightDiffuseColor)))
+		   (glm::length(pointLightRenders[0].source.diffuseColor) < glm::length(maxBrightDiffuseColor)))
 		{
-			pointLightRender.source.diffuseColor += pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
-			pointLightRender.source.specularColor += pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
+			pointLightRenders[0].source.diffuseColor += pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
+			pointLightRenders[0].source.specularColor += pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
 			lightCubeEmissiveStrength += pointLightBrightnessSpeed * deltaTime; 
 		}
-		else if(keys.keyPressed("LIGHT_DIM") && (glm::length(pointLightRender.source.diffuseColor) > 0.1f))
+		else if(keys.keyPressed("LIGHT_DIM") && (glm::length(pointLightRenders[0].source.diffuseColor) > 0.1f))
 		{
-			pointLightRender.source.diffuseColor -= pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
-			pointLightRender.source.specularColor -= pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
+			pointLightRenders[0].source.diffuseColor -= pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
+			pointLightRenders[0].source.specularColor -= pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
 			lightCubeEmissiveStrength -= pointLightBrightnessSpeed * deltaTime;
 		}
 
@@ -619,8 +663,8 @@ void Application::run()
 		{
 			pointLightMove.y = -pointLightMoveSpeed * deltaTime;
 		}
-		pointLightRender.source.position += pointLightMove;
-		pointLightRender.positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRender.source.position);
+		pointLightRenders[0].source.position += pointLightMove;
+		pointLightRenders[0].positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRenders[0].source.position);
 
 		lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightMove) * lightCubeTransformMat;
 
@@ -639,10 +683,10 @@ void Application::run()
 		glEnable(GL_CULL_FACE);
 
 		glUseProgram(dirShadowMapShader);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, dirLightRender.shadowMap, 0);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, dirLightsShadowMapArray, 0);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-		uniforms.setUniform(dirShadowMapShader, "u_lightSpaceMatrix", dirLightRender.matrix);
+		// Set dirlight space matrix uniform buffer
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -656,10 +700,10 @@ void Application::run()
 													  floorModelInfo.vboOffset, floorModelInfo.instanceOffset);
 
 		glUseProgram(omniShadowMapShader);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointLightRender.shadowCubeMap, 0);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointLightsShadowMapArray, 0);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-		uniforms.setUniform(omniShadowMapShader, "u_lightSpacePositionMatrix", pointLightRender.positionMatrix);
+		// Set pointlight position matrix uniform buffer
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -678,6 +722,7 @@ void Application::run()
 		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 		glm::mat4 viewMatrix = camera.viewMatrix();
+		glBindBuffer(GL_UNIFORM_BUFFER, matsUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(viewMatrix));
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -685,16 +730,7 @@ void Application::run()
 
 		glUseProgram(shader);
 		uniforms.setUniform(shader, "u_viewPos", camera.position);
-		uniforms.setUniform(shader, "u_dirLightSpaceMatrix", dirLightRender.matrix);
-		uniforms.setUniform(shader, "u_pointLightFarPlane", pointLightRender.farPlane);
-		uniforms.setUniform(shader, "u_pointLight.diffuseColor", pointLightRender.source.diffuseColor);
-		uniforms.setUniform(shader, "u_pointLight.specularColor", pointLightRender.source.specularColor);
-		uniforms.setUniform(shader, "u_pointLight.pos", pointLightRender.source.position);
-
-		glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, dirLightRender.shadowMap);
-		glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, pointLightRender.shadowCubeMap);
+		// Update pointlight uniform buffer
 		
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, woodCubeModelInfo.emissiveMapID);

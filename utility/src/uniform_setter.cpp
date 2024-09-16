@@ -12,7 +12,16 @@ void UniformSetter::addUniform(unsigned int shaderID, std::string_view fieldName
 {
 	auto it = names.addInPlace(fieldName);
 	std::string_view fieldNameStrView{*it};
-	nameToLocation[std::make_pair(shaderID, fieldNameStrView)] = glGetUniformLocation(shaderID, fieldName.data());
+	int location = glGetUniformLocation(shaderID, fieldName.data());
+
+	if(location != -1)
+	{
+		nameToLocation[std::make_pair(shaderID, fieldNameStrView)] = location;
+	}
+	else
+	{
+		throw std::invalid_argument{std::format("Field {} does not exist in shader {}", fieldName, shaderID)};
+	}
 }
 
 int UniformSetter::getUniformLocation(unsigned int shaderID, std::string_view fieldName)

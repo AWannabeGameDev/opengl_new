@@ -20,8 +20,7 @@ TextureData loadTexture(std::string_view path, bool flip)
 }
 
 unsigned int createTexture(unsigned int target, const TextureParameterSet& texParams, 
-						   unsigned int format, std::string_view path, bool flip, 
-						   int width, int height)
+						   unsigned int format, std::string_view path, bool flip)
 {
 	unsigned int texID;
 	glGenTextures(1, &texID);
@@ -32,30 +31,9 @@ unsigned int createTexture(unsigned int target, const TextureParameterSet& texPa
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, texParams.texWrapT);
 	glTexParameteri(target, GL_TEXTURE_WRAP_R, texParams.texWrapR);
 
-	if((width == 0) && (height == 0))
-	{
-		TextureData texInfo{loadTexture(path, flip)};
-		glTexImage2D(target, 0, format, texInfo.width, texInfo.height, 0, texInfo.format, GL_UNSIGNED_BYTE, texInfo.data);
-		stbi_image_free(texInfo.data);
-	}
-	else
-	{
-		unsigned int srcFormat;
-		if((format == GL_RGBA16F) || (format == GL_RGBA32F))
-		{
-			srcFormat = GL_RGBA;
-		}
-		else if((format == GL_RGB16F) || (format == GL_RGB32F))
-		{
-			srcFormat = GL_RGB;
-		}
-		else
-		{
-			srcFormat = format;
-		}
-
-		glTexImage2D(target, 0, format, width, height, 0, srcFormat, GL_UNSIGNED_BYTE, nullptr);
-	}
+	TextureData texInfo{loadTexture(path, flip)};
+	glTexImage2D(target, 0, format, texInfo.width, texInfo.height, 0, texInfo.format, GL_UNSIGNED_BYTE, texInfo.data);
+	stbi_image_free(texInfo.data);
 
 	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
 	{
@@ -65,9 +43,37 @@ unsigned int createTexture(unsigned int target, const TextureParameterSet& texPa
 	return texID;
 }
 
+unsigned int createTexture(unsigned int target, const TextureParameterSet& texParams, 
+						   unsigned int format, int width, int height, int numLayers)
+{
+	unsigned int texID;
+	glGenTextures(1, &texID);
+	glBindTexture(target, texID);
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, texParams.texWrapS);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, texParams.texWrapT);
+	glTexParameteri(target, GL_TEXTURE_WRAP_R, texParams.texWrapR);
+
+	if(numLayers == 0)
+	{
+		glTexStorage2D(target, GL_TEXTURE_MAX_LEVEL, format, width, height);
+	}
+	else 
+	{
+		glTexStorage3D(target, GL_TEXTURE_MAX_LEVEL, format, width, height, numLayers);
+	}
+
+	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
+	{
+		glGenerateMipmap(target);
+	}
+
+	return texID;
+}				
+
 unsigned int createCubemap(const TextureParameterSet& texParams, 
-						   unsigned int format, std::string_view paths[6], bool flip,
-						   int width, int height)
+						   unsigned int format, std::string_view paths[6], bool flip)
 {
 	unsigned int texID;
 	glGenTextures(1, &texID);
@@ -78,23 +84,12 @@ unsigned int createCubemap(const TextureParameterSet& texParams,
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, texParams.texWrapT);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, texParams.texWrapR);
 
-	if((width == 0) && (height == 0))
+	for(size_t i = 0; i < 6; i++)
 	{
-		for(size_t i = 0; i < 6; i++)
-		{
-			TextureData texInfo{loadTexture(paths[i], flip)};
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, 
-						 texInfo.width, texInfo.height, 0, texInfo.format, GL_UNSIGNED_BYTE, texInfo.data);
-			stbi_image_free(texInfo.data);
-		}
-	}
-	else
-	{
-		for(unsigned int i = 0; i < 6; i++)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, 
-						 width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
-		}
+		TextureData texInfo{loadTexture(paths[i], flip)};
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, 
+						texInfo.width, texInfo.height, 0, texInfo.format, GL_UNSIGNED_BYTE, texInfo.data);
+		stbi_image_free(texInfo.data);
 	}
 
 	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
@@ -104,3 +99,38 @@ unsigned int createCubemap(const TextureParameterSet& texParams,
 
 	return texID;
 }
+
+unsigned int createCubemap(const TextureParameterSet& texParams, 
+						   unsigned int format, int width, int height, int numLayers)
+{
+	unsigned int texID;
+	glGenTextures(1, &texID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, texParams.texWrapS);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, texParams.texWrapT);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, texParams.texWrapR);
+
+	if(numLayers == 0)
+	{
+		for(unsigned int i = 0; i < 6; i++)
+		{
+			glTexStorage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, GL_TEXTURE_MAX_LEVEL, format, width, height);
+		}
+	}
+	else
+	{
+		for(unsigned int i = 0; i < 6; i++)
+		{
+			glTexStorage3D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, GL_TEXTURE_MAX_LEVEL, format, width, height, numLayers);
+		}
+	}
+
+	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
+	{
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	}
+
+	return texID;
+}						   

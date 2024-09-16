@@ -20,11 +20,15 @@ struct TextureParameterSet
 };
 
 unsigned int createTexture(unsigned int target, const TextureParameterSet& texParams, 
-						   unsigned int format, std::string_view path, bool flip, 
-						   int width = 0, int height = 0);
+						   unsigned int format, std::string_view path, bool flip);
+
+unsigned int createTexture(unsigned int target, const TextureParameterSet& texParams, 
+						   unsigned int format, int width, int height, int numLayers = 0);					
 
 unsigned int createCubemap(const TextureParameterSet& texParams, 
-						   unsigned int format, std::string_view paths[6], bool flip,
-						   int width = 0, int height = 0);
+						   unsigned int format, std::string_view paths[6], bool flip);
+
+unsigned int createCubemap(const TextureParameterSet& texParams, 
+						   unsigned int format, int width, int height, int numLayers = 0);						   
 
 #endif

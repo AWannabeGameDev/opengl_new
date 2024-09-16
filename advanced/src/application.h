@@ -66,6 +66,14 @@ private :
 		OBJ_NORMAL_BUFFER_BINDING = 5,
 		OBJ_TANGENT_BUFFER_BINDING = 6;
 
+	static constexpr unsigned int CAM_MATS_UNI_BINDING = 0,
+								  LIGHTS_UNI_BINDING = 1,
+								  NUM_DIRLIGHTS_UNI_BINDING = 2,
+								  NUM_POINTLIGHTS_UNI_BINDING = 3,
+								  DIRLIGHT_MATRICES_UNI_BINDING = 4,
+								  POINTLIGHT_MATRICES_UNI_BINDING = 5,
+								  POINTLIGHT_FARPLANE_UNI_BINDING = 6;
+
 	const int SCREEN_WIDTH, SCREEN_HEIGHT;
 	GLFWwindow* window;
 	KeyboardInput keys;
@@ -80,8 +88,10 @@ private :
 
 	unsigned int vao, vbo, ebo;
 	unsigned int instanceVBO;
-	unsigned int matsUBO;
-	unsigned int matsUniformBinding;
+	unsigned int matsUBO, lightsUBO, 
+				 numDirLightsUBO, numPointLightsUBO,
+				 dirLightMatricesUBO, pointLightMatricesUBO,
+				 pointLightFarPlaneUBO;
 
 	ModelInfo woodCubeModelInfo, lightCubeModelInfo, floorModelInfo;
 
@@ -91,8 +101,11 @@ private :
 	float cubeShininess, floorShininess, floorHeightScale, lightCubeEmissiveStrength;
 	int numDispLayers;
 
-	DirectionalLightRender dirLightRender;
-	PointLightRender pointLightRender;
+	std::vector<DirectionalLightRender> dirLightRenders;
+	unsigned int dirLightsShadowMapArray;
+	std::vector<PointLightRender> pointLightRenders;
+	unsigned int pointLightsShadowMapArray;
+	float pointLightFarPlane;
 	float ambience;
 	static constexpr int SHADOW_MAP_WIDTH = 1024,
 						 SHADOW_MAP_HEIGHT = 1024;

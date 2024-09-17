@@ -41,7 +41,7 @@ void Application::initLightStructsAndMatrices()
 
 	ambience = 0.1f;
 
-	DirectionalLightRender& dirLightRender = dirLightRenders.emplace_back();
+	DirectionalLight& dirLight = dirLightRenders.emplace_back();
 
 	dirLightRender.source.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
 	dirLightRender.source.diffuseColor = glm::vec3{0.6f, 0.6f, 0.6f};

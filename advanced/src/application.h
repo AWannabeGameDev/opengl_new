@@ -101,9 +101,9 @@ private :
 	float cubeShininess, floorShininess, floorHeightScale, lightCubeEmissiveStrength;
 	int numDispLayers;
 
-	std::vector<DirectionalLightRender> dirLightRenders;
+	std::vector<DirectionalLight> dirLights;
 	unsigned int dirLightsShadowMapArray;
-	std::vector<PointLightRender> pointLightRenders;
+	std::vector<PointLight> pointLights;
 	unsigned int pointLightsShadowMapArray;
 	float pointLightFarPlane;
 	float ambience;

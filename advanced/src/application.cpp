@@ -37,8 +37,6 @@ void Application::addTextureUniforms()
 
 void Application::initLightStructsAndMatrices()
 {
-	// Work here : port back from light-render structs
-
 	ambience = 0.1f;
 
 	DirectionalLight& dirLight = dirLights.emplace_back();
@@ -281,7 +279,7 @@ void Application::createMatrixUBO()
 	glGenBuffers(1, &dirLightMatricesUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, dirLightMatricesUBO);
 	glBufferData(GL_UNIFORM_BUFFER, MAX_DIR_LIGHTS * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-	//glBufferSubData(); Do once dirlight matrices are separated from DirLightRender struct
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, dirLightMatrices.size() * sizeof(glm::mat4), dirLightMatrices.data());
 
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "dirLightMatrices"), DIRLIGHT_MATRICES_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, DIRLIGHT_MATRICES_UNI_BINDING, dirLightMatricesUBO);
@@ -289,7 +287,7 @@ void Application::createMatrixUBO()
 	glGenBuffers(1, &pointLightMatricesUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
 	glBufferData(GL_UNIFORM_BUFFER, MAX_POINT_LIGHTS * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-	//glBufferSubData(); Do once pointlight matrices are separated from PointLightRender struct
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLightPosMatrices.size() * sizeof(glm::mat4), pointLightPosMatrices.data());
 
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "pointLightMatrices"), POINTLIGHT_MATRICES_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, POINTLIGHT_MATRICES_UNI_BINDING, pointLightMatricesUBO);
@@ -640,8 +638,6 @@ void Application::run()
 			camera.rotateGlobal(camRight, mouseMoveY * camSensitivity * deltaTime);
 		}
 
-		// Work here : separate light source from light-render struct
-
 		if(keys.keyPressed("LIGHT_BRIGHT") && 
 		   (glm::length(pointLights[0].diffuseColor) < glm::length(maxBrightDiffuseColor)))
 		{
@@ -668,6 +664,8 @@ void Application::run()
 		pointLights[0].position += pointLightMove;
 		pointLightPosMatrices[0] = glm::translate(glm::mat4{1.0f}, -pointLights[0].position);
 
+		// Update lights UBO
+
 		lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightMove) * lightCubeTransformMat;
 
 		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -688,7 +686,9 @@ void Application::run()
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, dirLightsShadowMapArray, 0);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-		// Set dirlight space matrix uniform buffer
+		
+		glBindBuffer(GL_UNIFORM_BUFFER, dirLightMatricesUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, dirLightMatrices.size() * sizeof(glm::mat4), dirLightMatrices.data());
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -705,7 +705,9 @@ void Application::run()
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointLightsShadowMapArray, 0);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-		// Set pointlight position matrix uniform buffer
+		
+		glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLightPosMatrices.size() * sizeof(glm::mat4), pointLightPosMatrices.data());
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -732,7 +734,6 @@ void Application::run()
 
 		glUseProgram(shader);
 		uniforms.setUniform(shader, "u_viewPos", camera.position);
-		// Update pointlight uniform buffer
 		
 		glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, woodCubeModelInfo.emissiveMapID);

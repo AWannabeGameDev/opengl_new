@@ -102,8 +102,12 @@ private :
 	int numDispLayers;
 
 	std::vector<DirectionalLight> dirLights;
+	std::vector<glm::mat4> dirLightMatrices;
 	unsigned int dirLightsShadowMapArray;
 	std::vector<PointLight> pointLights;
+	std::vector<glm::mat4> pointLightPosMatrices;
+	glm::mat4 pointLightViewMatrices[6];
+	glm::mat4 pointLightProjMatrix;
 	unsigned int pointLightsShadowMapArray;
 	float pointLightFarPlane;
 	float ambience;

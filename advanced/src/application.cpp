@@ -41,54 +41,56 @@ void Application::initLightStructsAndMatrices()
 
 	ambience = 0.1f;
 
-	DirectionalLight& dirLight = dirLightRenders.emplace_back();
+	DirectionalLight& dirLight = dirLights.emplace_back();
+	glm::mat4& dirLightMatrix = dirLightMatrices.emplace_back();
 
-	dirLightRender.source.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
-	dirLightRender.source.diffuseColor = glm::vec3{0.6f, 0.6f, 0.6f};
-	dirLightRender.source.specularColor = glm::vec3{0.3f, 0.3f, 0.3f};
+	dirLight.direction = glm::normalize(glm::vec3{1.0f, -1.0f, 1.0f});
+	dirLight.diffuseColor = glm::vec3{0.6f, 0.6f, 0.6f};
+	dirLight.specularColor = glm::vec3{0.3f, 0.3f, 0.3f};
 
-	dirLightRender.matrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
-		glm::lookAt(-dirLightRender.source.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
+	dirLightMatrix = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, -15.0f, 15.0f) *
+		glm::lookAt(-dirLight.direction, glm::vec3{0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
 
 	maxBrightDiffuseColor = {0.0f, 1.0f, 1.0f};
 	maxBrightSpecularColor = {0.0f, 0.4f, 0.4f};
 
-	PointLightRender& pointLightRender = pointLightRenders.emplace_back();
+	PointLight& pointLight = pointLights.emplace_back();
+	glm::mat4& pointLightPosMatrix = pointLightPosMatrices.emplace_back();
 
-	pointLightRender.source.position = {0.0f, 0.5f, 0.0f};
-	pointLightRender.source.diffuseColor = maxBrightDiffuseColor;
-	pointLightRender.source.specularColor = maxBrightSpecularColor;
-	pointLightRender.source.attenConst = 1.0f;
-	pointLightRender.source.attenLin = 0.045f;
-	pointLightRender.source.attenQuad = 0.0075f;
+	pointLight.position = {0.0f, 0.5f, 0.0f};
+	pointLight.diffuseColor = maxBrightDiffuseColor;
+	pointLight.specularColor = maxBrightSpecularColor;
+	pointLight.attenConst = 1.0f;
+	pointLight.attenLin = 0.045f;
+	pointLight.attenQuad = 0.0075f;
 
 	pointLightFarPlane = 20.0f;
-	pointLightRender.projMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, pointLightRender.farPlane);
-	pointLightRender.positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRender.source.position);
+	pointLightProjMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, pointLightFarPlane);
+	pointLightPosMatrix = glm::translate(glm::mat4{1.0f}, -pointLight.position);
 
-	pointLightRender.viewMatrices[0] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
-												   glm::vec3{1.0f, 0.0f, 0.0f}, 
-												   glm::vec3{0.0f, -1.0f, 0.0f});
+	pointLightViewMatrices[0] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+											glm::vec3{1.0f, 0.0f, 0.0f}, 
+										   glm::vec3{0.0f, -1.0f, 0.0f});
 
-	pointLightRender.viewMatrices[1] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
-												   glm::vec3{-1.0f, 0.0f, 0.0f}, 
-												   glm::vec3{0.0f, -1.0f, 0.0f});
+	pointLightViewMatrices[1] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+										   glm::vec3{-1.0f, 0.0f, 0.0f}, 
+										   glm::vec3{0.0f, -1.0f, 0.0f});
 
-	pointLightRender.viewMatrices[2] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
-												   glm::vec3{0.0f, 1.0f, 0.0f}, 
-												   glm::vec3{0.0f, 0.0f, 1.0f});
+	pointLightViewMatrices[2] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+										   glm::vec3{0.0f, 1.0f, 0.0f}, 
+										   glm::vec3{0.0f, 0.0f, 1.0f});
 
-	pointLightRender.viewMatrices[3] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
-												   glm::vec3{0.0f, -1.0f, 0.0f}, 
-												   glm::vec3{0.0f, 0.0f, -1.0f});
+	pointLightViewMatrices[3] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+											glm::vec3{0.0f, -1.0f, 0.0f}, 
+									    	glm::vec3{0.0f, 0.0f, -1.0f});
 
-	pointLightRender.viewMatrices[4] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
-												   glm::vec3{0.0f, 0.0f, 1.0f}, 
-												   glm::vec3{0.0f, -1.0f, 0.0f});
+	pointLightViewMatrices[4] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+											glm::vec3{0.0f, 0.0f, 1.0f}, 
+										    glm::vec3{0.0f, -1.0f, 0.0f});
 
-	pointLightRender.viewMatrices[5] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
-												   glm::vec3{0.0f, 0.0f, -1.0f}, 
-												   glm::vec3{0.0f, -1.0f, 0.0f});
+	pointLightViewMatrices[5] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
+											glm::vec3{0.0f, 0.0f, -1.0f}, 
+											glm::vec3{0.0f, -1.0f, 0.0f});
 }
 
 void Application::createLightShadowMaps()
@@ -188,7 +190,7 @@ void Application::initObjectTransforms()
 		cubeTransformMat = glm::translate(glm::mat4{1.0f}, glm::vec3{randrange(-9.5f, 9.5f), 0.50f, randrange(-9.5f, 9.5f)});
 	}
 	
-	lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightRenders[0].source.position) * 
+	lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLights[0].position) * 
 							glm::scale(glm::mat4{1.0f}, glm::vec3{0.25f, 0.25f, 0.25f});
 
 	floorTransformMat = glm::rotate(glm::mat4{1.0f}, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f}) * 
@@ -260,7 +262,7 @@ void Application::createMatrixUBO()
 	glBindBuffer(GL_UNIFORM_BUFFER, numDirLightsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_DYNAMIC_DRAW);
 	int* numDirLightsPtr = (int*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-	*numDirLightsPtr = dirLightRenders.size();
+	*numDirLightsPtr = dirLights.size();
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "numDirLights"), NUM_DIRLIGHTS_UNI_BINDING);
@@ -270,7 +272,7 @@ void Application::createMatrixUBO()
 	glBindBuffer(GL_UNIFORM_BUFFER, numPointLightsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_DYNAMIC_DRAW);
 	int* numPointLightsPtr = (int*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-	*numPointLightsPtr = pointLightRenders.size();
+	*numPointLightsPtr = pointLights.size();
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "numPointLights"), NUM_POINTLIGHTS_UNI_BINDING);
@@ -357,8 +359,8 @@ void Application::createTextureMaps()
 	glViewport(0, 0, 1, 1);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lightCubeModelInfo.emissiveMapID, 0);
-	glClearColor(pointLightRenders[0].source.diffuseColor.r,
-				 pointLightRenders[0].source.diffuseColor.g, pointLightRenders[0].source.diffuseColor.b, 0.0f);
+	glClearColor(pointLights[0].diffuseColor.r,
+				 pointLights[0].diffuseColor.g, pointLights[0].diffuseColor.b, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blackTexture, 0);
@@ -641,16 +643,16 @@ void Application::run()
 		// Work here : separate light source from light-render struct
 
 		if(keys.keyPressed("LIGHT_BRIGHT") && 
-		   (glm::length(pointLightRenders[0].source.diffuseColor) < glm::length(maxBrightDiffuseColor)))
+		   (glm::length(pointLights[0].diffuseColor) < glm::length(maxBrightDiffuseColor)))
 		{
-			pointLightRenders[0].source.diffuseColor += pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
-			pointLightRenders[0].source.specularColor += pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
+			pointLights[0].diffuseColor += pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
+			pointLights[0].specularColor += pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
 			lightCubeEmissiveStrength += pointLightBrightnessSpeed * deltaTime; 
 		}
-		else if(keys.keyPressed("LIGHT_DIM") && (glm::length(pointLightRenders[0].source.diffuseColor) > 0.1f))
+		else if(keys.keyPressed("LIGHT_DIM") && (glm::length(pointLights[0].diffuseColor) > 0.1f))
 		{
-			pointLightRenders[0].source.diffuseColor -= pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
-			pointLightRenders[0].source.specularColor -= pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
+			pointLights[0].diffuseColor -= pointLightBrightnessSpeed * maxBrightDiffuseColor * deltaTime;
+			pointLights[0].specularColor -= pointLightBrightnessSpeed * maxBrightSpecularColor * deltaTime;
 			lightCubeEmissiveStrength -= pointLightBrightnessSpeed * deltaTime;
 		}
 
@@ -663,8 +665,8 @@ void Application::run()
 		{
 			pointLightMove.y = -pointLightMoveSpeed * deltaTime;
 		}
-		pointLightRenders[0].source.position += pointLightMove;
-		pointLightRenders[0].positionMatrix = glm::translate(glm::mat4{1.0f}, -pointLightRenders[0].source.position);
+		pointLights[0].position += pointLightMove;
+		pointLightPosMatrices[0] = glm::translate(glm::mat4{1.0f}, -pointLights[0].position);
 
 		lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightMove) * lightCubeTransformMat;
 

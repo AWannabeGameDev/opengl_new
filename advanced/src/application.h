@@ -7,6 +7,7 @@
 #include <utility/camera.h>
 #include <utility/uniform_setter.h>
 #include <utility/lighting.h>
+#include <vector>
 
 struct ModelInfo
 {

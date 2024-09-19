@@ -2,8 +2,8 @@
 
 const int MAX_POINT_LIGHTS = 100;
 
-layout(triangles) in;
-layout(triangle_strip, max_vertices = 18 * MAX_POINT_LIGHTS) out;
+layout(triangles, invocations = 10) in;
+layout(triangle_strip, max_vertices = 18 * MAX_POINT_LIGHTS / 10) out;
 
 layout(std140) uniform pointLightMatrices
 {

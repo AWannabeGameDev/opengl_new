@@ -6,47 +6,40 @@
 struct PointLight
 {
 	glm::vec3 position;
+	float _padding1;
 	glm::vec3 diffuseColor;
+	float _padding2;
 	glm::vec3 specularColor;
 	float attenConst;
 	float attenLin;
 	float attenQuad;
+	float _padding4[2];
 };
 
 struct DirectionalLight
 {
 	glm::vec3 direction;
+	float _padding1;
 	glm::vec3 diffuseColor;
+	float _padding2;
 	glm::vec3 specularColor;
+	float _padding3;
 };
 
 struct ConeLight
 {
 	glm::vec3 position;
+	float _padding1;
 	glm::vec3 direction;
+	float _padding2;
 	glm::vec3 diffuseColor;
+	float _padding3;
 	glm::vec3 specularColor;
 	float angleCosine;
 	float attenConst;
 	float attenLin;
 	float attenQuad;
-};
-
-struct PointLightRender
-{
-	unsigned int shadowCubeMap;
-	glm::mat4 projMatrix;
-	glm::mat4 viewMatrices[6];
-	glm::mat4 positionMatrix;
-	float farPlane;
-	PointLight source;
-};
-
-struct DirectionalLightRender
-{
-	unsigned int shadowMap;
-	glm::mat4 matrix;
-	DirectionalLight source;
+	float _padding4;
 };
 
 #endif

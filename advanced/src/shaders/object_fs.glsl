@@ -5,6 +5,7 @@ struct DirectionalLight
 	vec3 dirNormalized; // 0
 	vec3 diffuseColor; // 4N
 	vec3 specularColor; // 8N
+	// 1N padding
 };
 
 struct PointLight
@@ -12,7 +13,8 @@ struct PointLight
 	vec3 pos; // 0
 	vec3 diffuseColor; // 4N 
 	vec3 specularColor; // 8N
-	float attenConst, attenLin, attenQuad; // 12N, 13N, 14N
+	float attenConst, attenLin, attenQuad; // 11N, 12N, 13N
+	// 2N padding
 };
 
 struct ConeLight
@@ -21,14 +23,18 @@ struct ConeLight
 	vec3 dirNormalized; // 4N
 	vec3 diffuseColor; // 8N
 	vec3 specularColor; // 12N
-	float angleCosine; // 16N
-	float attenConst, attenLin, attenQuad; // 17N, 18N, 19N
-};	
+	float angleCosine; // 15N
+	float attenConst, attenLin, attenQuad; // 16N, 17N, 18N
+	// 1N padding
+};
+
+const int MAX_DIR_LIGHTS = 10;
+const int MAX_POINT_LIGHTS = 100;
 
 in vec2 texCoord;
 in mat3 TBNMatrix;
 in vec3 fragWorldCoord;
-out vec4 fragDirLightSpaceCoords[MAX_DIR_LIGHTS];
+in vec4 fragDirLightSpaceCoords[MAX_DIR_LIGHTS];
 
 uniform sampler2D u_diffuse;
 uniform sampler2D u_specular;
@@ -39,9 +45,6 @@ uniform float u_materialShininess;
 uniform float u_heightScale;
 uniform int u_numDispLayers;
 uniform float u_emissiveStrength;
-
-const int MAX_DIR_LIGHTS = 10;
-const int MAX_POINT_LIGHTS = 100;
 
 layout(std140) uniform lights
 {
@@ -199,10 +202,10 @@ void main()
 		for(int i = 0; i < 9; i++)
 		{
 			float depthBias = 0.001f * (1.0f - dot(normal, -u_dirLights[dirLightIdx].dirNormalized));
-			vec2 shadowSampleTexCoord = (fragDirLightSpaceCoord.xy * 0.5f) + vec2(0.5f) + shadowSampleOffsets[i];
+			vec2 shadowSampleTexCoord = (fragDirLightSpaceCoords[dirLightIdx].xy * 0.5f) + vec2(0.5f) + shadowSampleOffsets[i];
 
-			float closestLightDepth = texture(u_dirLightShadowMaps[dirLightIdx], shadowSampleTexCoord).r;
-			float fragLightDepth = ((fragDirLightSpaceCoord.z * 0.5f) + 0.5f) - depthBias;
+			float closestLightDepth = texture(u_dirLightShadowMaps, vec3(shadowSampleTexCoord, dirLightIdx)).r;
+			float fragLightDepth = ((fragDirLightSpaceCoords[dirLightIdx].z * 0.5f) + 0.5f) - depthBias;
 
 			if(fragLightDepth > closestLightDepth)
 			{
@@ -210,7 +213,8 @@ void main()
 			}
 		}
 
-		fragColor.rgb += (1.0f - dirLightShadowStrength) * calcDirLight(u_dirLight[dirLightIdx], diffuseColor.rgb, specularColor.rgb);
+		fragColor.rgb += (1.0f - dirLightShadowStrength) * calcDirLight(u_dirLights[dirLightIdx], 
+																		diffuseColor.rgb, specularColor.rgb);
 	}
 
 	for(int pointLightIdx = 0; pointLightIdx < u_numPointLights; pointLightIdx++)
@@ -219,7 +223,7 @@ void main()
 		float depthBias = 0.001f * (1.0f - dot(normal, normalize(-shadowSampleTexCoord)));
 		
 		float pointLightShadowStrength = 0.0f;
-		float closestLightDepth = texture(u_pointLightShadowMaps[pointLightIdx], shadowSampleTexCoord).r;
+		float closestLightDepth = texture(u_pointLightShadowMaps, vec4(shadowSampleTexCoord, pointLightIdx)).r;
 		float fragLightDepth = (length(shadowSampleTexCoord) / u_pointLightFarPlane) - depthBias;
 
 		if(fragLightDepth > closestLightDepth)

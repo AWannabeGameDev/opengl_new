@@ -237,8 +237,6 @@ void Application::setModelInfos()
 
 void Application::createMatrixUBO()
 {
-	// Work here : Figure out alignment stuff
-
 	glGenBuffers(1, &matsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, matsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
@@ -250,15 +248,18 @@ void Application::createMatrixUBO()
 
 	glGenBuffers(1, &lightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_DYNAMIC_DRAW);
-	//glBufferSubData();
+	glBufferData(GL_UNIFORM_BUFFER, (MAX_DIR_LIGHTS * sizeof(DirectionalLight)) + (MAX_POINT_LIGHTS * sizeof(PointLight)), 
+				 nullptr, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, dirLights.size() * sizeof(DirectionalLight), dirLights.data());
+	glBufferSubData(GL_UNIFORM_BUFFER, MAX_DIR_LIGHTS * sizeof(DirectionalLight), 
+					pointLights.size() * sizeof(PointLight), pointLights.data());
 
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "lights"), LIGHTS_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, LIGHTS_UNI_BINDING, lightsUBO);
 
 	glGenBuffers(1, &numDirLightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, numDirLightsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(int), nullptr, GL_DYNAMIC_DRAW);
 	int* numDirLightsPtr = (int*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	*numDirLightsPtr = dirLights.size();
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -268,7 +269,7 @@ void Application::createMatrixUBO()
 
 	glGenBuffers(1, &numPointLightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, numPointLightsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(int), nullptr, GL_DYNAMIC_DRAW);
 	int* numPointLightsPtr = (int*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	*numPointLightsPtr = pointLights.size();
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -288,14 +289,17 @@ void Application::createMatrixUBO()
 	glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
 	glBufferData(GL_UNIFORM_BUFFER, (MAX_POINT_LIGHTS + 7) * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLightPosMatrices.size() * sizeof(glm::mat4), pointLightPosMatrices.data());
+	glBufferSubData(GL_UNIFORM_BUFFER, pointLightPosMatrices.size() * sizeof(glm::mat4), sizeof(glm::mat4), 
+					&pointLightProjMatrix);
+	glBufferSubData(GL_UNIFORM_BUFFER, (pointLightPosMatrices.size() + 1) * sizeof(glm::mat4), 6 * sizeof(glm::mat4), 
+					&pointLightViewMatrices);
 
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "pointLightMatrices"), POINTLIGHT_MATRICES_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, POINTLIGHT_MATRICES_UNI_BINDING, pointLightMatricesUBO);
 
 	glGenBuffers(1, &pointLightFarPlaneUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, pointLightFarPlaneUBO);
-	glBufferData(GL_UNIFORM_BUFFER, 0 /*put size here*/, nullptr, GL_STATIC_DRAW);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float), &pointLightFarPlane);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(float), &pointLightFarPlane, GL_STATIC_DRAW);
 
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "pointLightFarPlane"), POINTLIGHT_FARPLANE_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, POINTLIGHT_FARPLANE_UNI_BINDING, pointLightFarPlaneUBO);
@@ -664,7 +668,9 @@ void Application::run()
 		pointLights[0].position += pointLightMove;
 		pointLightPosMatrices[0] = glm::translate(glm::mat4{1.0f}, -pointLights[0].position);
 
-		// Update lights, matrices UBO
+		glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, MAX_DIR_LIGHTS * sizeof(DirectionalLight), sizeof(PointLight), &pointLights[0]);
+
 		glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLightPosMatrices.size() * sizeof(glm::mat4), pointLightPosMatrices.data());
 

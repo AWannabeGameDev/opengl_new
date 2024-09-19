@@ -286,7 +286,7 @@ void Application::createMatrixUBO()
 
 	glGenBuffers(1, &pointLightMatricesUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
-	glBufferData(GL_UNIFORM_BUFFER, MAX_POINT_LIGHTS * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, (MAX_POINT_LIGHTS + 7) * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLightPosMatrices.size() * sizeof(glm::mat4), pointLightPosMatrices.data());
 
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "pointLightMatrices"), POINTLIGHT_MATRICES_UNI_BINDING);
@@ -664,7 +664,9 @@ void Application::run()
 		pointLights[0].position += pointLightMove;
 		pointLightPosMatrices[0] = glm::translate(glm::mat4{1.0f}, -pointLights[0].position);
 
-		// Update lights UBO
+		// Update lights, matrices UBO
+		glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLightPosMatrices.size() * sizeof(glm::mat4), pointLightPosMatrices.data());
 
 		lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLightMove) * lightCubeTransformMat;
 
@@ -686,9 +688,6 @@ void Application::run()
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, dirLightsShadowMapArray, 0);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-		
-		glBindBuffer(GL_UNIFORM_BUFFER, dirLightMatricesUBO);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, dirLightMatrices.size() * sizeof(glm::mat4), dirLightMatrices.data());
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -705,9 +704,6 @@ void Application::run()
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointLightsShadowMapArray, 0);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-		
-		glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLightPosMatrices.size() * sizeof(glm::mat4), pointLightPosMatrices.data());
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 

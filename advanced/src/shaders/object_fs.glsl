@@ -2,27 +2,27 @@
 
 struct DirectionalLight
 {
-	vec3 dirNormalized;
-	vec3 diffuseColor; 
-	vec3 specularColor;
+	vec3 dirNormalized; // 0
+	vec3 diffuseColor; // 4N
+	vec3 specularColor; // 8N
 };
 
 struct PointLight
 {
-	vec3 pos; 
-	vec3 diffuseColor; 
-	vec3 specularColor;
-	float attenConst, attenLin, attenQuad; 
+	vec3 pos; // 0
+	vec3 diffuseColor; // 4N 
+	vec3 specularColor; // 8N
+	float attenConst, attenLin, attenQuad; // 12N, 13N, 14N
 };
 
 struct ConeLight
 {
-	vec3 pos;
-	vec3 dirNormalized; 
-	vec3 diffuseColor; 
-	vec3 specularColor;
-	float angleCosine; 
-	float attenConst, attenLin, attenQuad; 
+	vec3 pos; // 0
+	vec3 dirNormalized; // 4N
+	vec3 diffuseColor; // 8N
+	vec3 specularColor; // 12N
+	float angleCosine; // 16N
+	float attenConst, attenLin, attenQuad; // 17N, 18N, 19N
 };	
 
 in vec2 texCoord;

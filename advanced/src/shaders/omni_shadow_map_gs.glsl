@@ -7,9 +7,9 @@ layout(triangle_strip, max_vertices = 18 * MAX_POINT_LIGHTS) out;
 
 layout(std140) uniform pointLightMatrices
 {
+	mat4 u_lightSpacePositionMatrices[MAX_POINT_LIGHTS];
 	mat4 u_lightSpaceProjMatrix;
 	mat4 u_lightSpaceViewMatrices[6];
-	mat4 u_lightSpacePositionMatrices[MAX_POINT_LIGHTS];
 };
 
 layout(std140) uniform numPointLights

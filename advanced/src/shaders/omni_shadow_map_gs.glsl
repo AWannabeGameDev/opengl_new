@@ -1,6 +1,6 @@
 #version 460 core
 
-const int MAX_POINT_LIGHTS = 100;
+const int MAX_POINT_LIGHTS = 10;
 
 layout(triangles, invocations = 10) in;
 layout(triangle_strip, max_vertices = 18 * MAX_POINT_LIGHTS / 10) out;
@@ -21,7 +21,7 @@ out vec3 fragViewCoord;
 
 void main()
 {
-	for(int pointLightIdx = 0; pointLightIdx < u_numPointLights; pointLightIdx++)
+	for(int pointLightIdx = gl_InvocationID * 10; pointLightIdx < u_numPointLights; pointLightIdx++)
 	{
 		for(int face = 0; face < 6; face++)
 		{

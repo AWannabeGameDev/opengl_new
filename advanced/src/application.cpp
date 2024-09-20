@@ -100,15 +100,15 @@ void Application::createLightShadowMaps()
 	shadowMapParams.texWrapT = GL_CLAMP_TO_BORDER;
 	shadowMapParams.texWrapR = GL_CLAMP_TO_BORDER;
 
-	dirLightsShadowMapArray = createTexture(GL_TEXTURE_2D, shadowMapParams, GL_DEPTH_COMPONENT, 
+	dirLightsShadowMapArray = createTexture(GL_TEXTURE_2D_ARRAY, shadowMapParams, GL_DEPTH_COMPONENT16, 
 											SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_DIR_LIGHTS);
-	pointLightsShadowMapArray = createCubemap(shadowMapParams, GL_DEPTH_COMPONENT, 
-												   SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_POINT_LIGHTS);
+	pointLightsShadowMapArray = createCubemap(shadowMapParams, GL_DEPTH_COMPONENT16, 
+											  SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_POINT_LIGHTS);
 
 	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT);
-	glBindTexture(GL_TEXTURE_2D, dirLightsShadowMapArray);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, dirLightsShadowMapArray);
 	glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, pointLightsShadowMapArray);												   
+	glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointLightsShadowMapArray);												   
 }
 
 size_t Application::createVBO()
@@ -242,8 +242,8 @@ void Application::createMatrixUBO()
 	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(camera.projectionMatrix()));
 
-	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "mats"), CAM_MATS_UNI_BINDING);
-	glUniformBlockBinding(skyboxShader, glGetUniformBlockIndex(skyboxShader, "mats"), CAM_MATS_UNI_BINDING);
+	uniforms.bindUniformBlock(shader, "mats", CAM_MATS_UNI_BINDING);
+	uniforms.bindUniformBlock(skyboxShader, "mats", CAM_MATS_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, CAM_MATS_UNI_BINDING, matsUBO);
 
 	glGenBuffers(1, &lightsUBO);
@@ -254,27 +254,29 @@ void Application::createMatrixUBO()
 	glBufferSubData(GL_UNIFORM_BUFFER, MAX_DIR_LIGHTS * sizeof(DirectionalLight), 
 					pointLights.size() * sizeof(PointLight), pointLights.data());
 
-	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "lights"), LIGHTS_UNI_BINDING);
+	uniforms.bindUniformBlock(shader, "lights", LIGHTS_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, LIGHTS_UNI_BINDING, lightsUBO);
 
 	glGenBuffers(1, &numDirLightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, numDirLightsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(int), nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
 	int* numDirLightsPtr = (int*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-	*numDirLightsPtr = dirLights.size();
+	*numDirLightsPtr = (int)dirLights.size();
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "numDirLights"), NUM_DIRLIGHTS_UNI_BINDING);
+	uniforms.bindUniformBlock(shader, "numDirLights", NUM_DIRLIGHTS_UNI_BINDING);
+	uniforms.bindUniformBlock(dirShadowMapShader, "numDirLights", NUM_DIRLIGHTS_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, NUM_DIRLIGHTS_UNI_BINDING, numDirLightsUBO);
 
 	glGenBuffers(1, &numPointLightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, numPointLightsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(int), nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
 	int* numPointLightsPtr = (int*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-	*numPointLightsPtr = pointLights.size();
+	*numPointLightsPtr = (int)pointLights.size();
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "numPointLights"), NUM_POINTLIGHTS_UNI_BINDING);
+	uniforms.bindUniformBlock(shader, "numPointLights", NUM_POINTLIGHTS_UNI_BINDING);
+	uniforms.bindUniformBlock(omniShadowMapShader, "numPointLights", NUM_POINTLIGHTS_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, NUM_POINTLIGHTS_UNI_BINDING, numPointLightsUBO);
 
 	glGenBuffers(1, &dirLightMatricesUBO);
@@ -282,26 +284,28 @@ void Application::createMatrixUBO()
 	glBufferData(GL_UNIFORM_BUFFER, MAX_DIR_LIGHTS * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, dirLightMatrices.size() * sizeof(glm::mat4), dirLightMatrices.data());
 
-	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "dirLightMatrices"), DIRLIGHT_MATRICES_UNI_BINDING);
+	uniforms.bindUniformBlock(shader, "dirLightMatrices", DIRLIGHT_MATRICES_UNI_BINDING);
+	uniforms.bindUniformBlock(dirShadowMapShader, "dirLightMatrices", DIRLIGHT_MATRICES_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, DIRLIGHT_MATRICES_UNI_BINDING, dirLightMatricesUBO);
 
 	glGenBuffers(1, &pointLightMatricesUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, pointLightMatricesUBO);
 	glBufferData(GL_UNIFORM_BUFFER, (MAX_POINT_LIGHTS + 7) * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLightPosMatrices.size() * sizeof(glm::mat4), pointLightPosMatrices.data());
-	glBufferSubData(GL_UNIFORM_BUFFER, pointLightPosMatrices.size() * sizeof(glm::mat4), sizeof(glm::mat4), 
+	glBufferSubData(GL_UNIFORM_BUFFER, MAX_POINT_LIGHTS * sizeof(glm::mat4), sizeof(glm::mat4), 
 					&pointLightProjMatrix);
-	glBufferSubData(GL_UNIFORM_BUFFER, (pointLightPosMatrices.size() + 1) * sizeof(glm::mat4), 6 * sizeof(glm::mat4), 
+	glBufferSubData(GL_UNIFORM_BUFFER, (MAX_POINT_LIGHTS + 1) * sizeof(glm::mat4), 6 * sizeof(glm::mat4), 
 					&pointLightViewMatrices);
 
-	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "pointLightMatrices"), POINTLIGHT_MATRICES_UNI_BINDING);
+	uniforms.bindUniformBlock(omniShadowMapShader, "pointLightMatrices", POINTLIGHT_MATRICES_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, POINTLIGHT_MATRICES_UNI_BINDING, pointLightMatricesUBO);
 
 	glGenBuffers(1, &pointLightFarPlaneUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, pointLightFarPlaneUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(float), &pointLightFarPlane, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::vec4), &pointLightFarPlane, GL_STATIC_DRAW);
 
-	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "pointLightFarPlane"), POINTLIGHT_FARPLANE_UNI_BINDING);
+	uniforms.bindUniformBlock(shader, "pointLightFarPlane", POINTLIGHT_FARPLANE_UNI_BINDING);
+	uniforms.bindUniformBlock(omniShadowMapShader, "pointLightFarPlane", POINTLIGHT_FARPLANE_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, POINTLIGHT_FARPLANE_UNI_BINDING, pointLightFarPlaneUBO);
 }
 
@@ -351,10 +355,10 @@ void Application::createTextureMaps()
 	texParams.texWrapT = GL_REPEAT;
 	texParams.texWrapR = GL_REPEAT;
 
-	blackTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, 1, 1);
-	whiteTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, 1, 1);
-	lightCubeModelInfo.emissiveMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, 1, 1);
-	defaultNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, 1, 1);
+	blackTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
+	whiteTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
+	lightCubeModelInfo.emissiveMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
+	defaultNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
 
 	glGenFramebuffers(1, &textureWriteFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
@@ -520,7 +524,8 @@ Application::Application() :
 	shader{createShaderProgram("../src/shaders/object_vs.glsl", "../src/shaders/object_fs.glsl")},
 	fbShader{createShaderProgram("../src/shaders/framebuffer_vs.glsl", "../src/shaders/framebuffer_fs.glsl")},
 	skyboxShader{createShaderProgram("../src/shaders/skybox_vs.glsl", "../src/shaders/skybox_fs.glsl")},
-	dirShadowMapShader{createShaderProgram("../src/shaders/dir_shadow_map_vs.glsl", 
+	dirShadowMapShader{createShaderProgram("../src/shaders/dir_shadow_map_vs.glsl",
+										   "../src/shaders/dir_shadow_map_gs.glsl",
 										   "../src/shaders/dir_shadow_map_fs.glsl")},
 	omniShadowMapShader{createShaderProgram("../src/shaders/omni_shadow_map_vs.glsl",
 											"../src/shaders/omni_shadow_map_gs.glsl",
@@ -591,6 +596,8 @@ void Application::run()
 	glfwPollEvents();
 	keys.update();
 	mouse.update();
+
+	printf("Starting render loop.\n");
 
 	while(!glfwWindowShouldClose(window))
 	{

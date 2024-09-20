@@ -28,8 +28,8 @@ struct ConeLight
 	// 1N padding
 };
 
-const int MAX_DIR_LIGHTS = 10;
-const int MAX_POINT_LIGHTS = 100;
+const int MAX_DIR_LIGHTS = 3;
+const int MAX_POINT_LIGHTS = 10;
 
 in vec2 texCoord;
 in mat3 TBNMatrix;

@@ -12,7 +12,7 @@ layout(std140) uniform mats
 	mat4 u_projection;
 };
 
-const int MAX_DIR_LIGHTS = 10;
+const int MAX_DIR_LIGHTS = 3;
 layout(std140) uniform dirLightMatrices
 {
 	mat4 u_dirLightSpaceMatrices[MAX_DIR_LIGHTS];

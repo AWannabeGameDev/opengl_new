@@ -57,11 +57,11 @@ unsigned int createTexture(unsigned int target, const TextureParameterSet& texPa
 
 	if(numLayers == 0)
 	{
-		glTexStorage2D(target, GL_TEXTURE_MAX_LEVEL, format, width, height);
+		glTexStorage2D(target, log2f(width) + 1, format, width, height);
 	}
 	else 
 	{
-		glTexStorage3D(target, GL_TEXTURE_MAX_LEVEL, format, width, height, numLayers);
+		glTexStorage3D(target, log2f(width) + 1, format, width, height, numLayers);
 	}
 
 	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
@@ -103,34 +103,47 @@ unsigned int createCubemap(const TextureParameterSet& texParams,
 unsigned int createCubemap(const TextureParameterSet& texParams, 
 						   unsigned int format, int width, int height, int numLayers)
 {
-	unsigned int texID;
-	glGenTextures(1, &texID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, texParams.texWrapS);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, texParams.texWrapT);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, texParams.texWrapR);
-
 	if(numLayers == 0)
 	{
+		unsigned int texID;
+		glGenTextures(1, &texID);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, texParams.texWrapS);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, texParams.texWrapT);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, texParams.texWrapR);
+
 		for(unsigned int i = 0; i < 6; i++)
 		{
 			glTexStorage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, GL_TEXTURE_MAX_LEVEL, format, width, height);
 		}
+
+		if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
+		{
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+		}
+
+		return texID;
 	}
 	else
 	{
-		for(unsigned int i = 0; i < 6; i++)
+		unsigned int texID;
+		glGenTextures(1, &texID);
+		glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texID);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, texParams.minFilter);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, texParams.magFilter);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, texParams.texWrapS);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, texParams.texWrapT);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, texParams.texWrapR);
+
+		glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, log2f(width) + 1, format, width, height, numLayers * 6);
+
+		if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
 		{
-			glTexStorage3D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, GL_TEXTURE_MAX_LEVEL, format, width, height, numLayers);
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 		}
-	}
 
-	if((texParams.minFilter >= GL_NEAREST_MIPMAP_NEAREST) && (texParams.minFilter <= GL_LINEAR_MIPMAP_LINEAR))
-	{
-		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+		return texID;
 	}
-
-	return texID;
 }						   

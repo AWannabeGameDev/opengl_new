@@ -32,7 +32,6 @@ int UniformSetter::getUniformLocation(unsigned int shaderID, std::string_view fi
 	}
 	catch(const std::out_of_range& exp)
 	{
-
 		throw std::invalid_argument{std::format("Combination of shaderID {} and field {} does not exist.", shaderID, fieldName)};
 	}
 }
@@ -65,4 +64,16 @@ void UniformSetter::setUniform(unsigned int shaderID, std::string_view fieldName
 void UniformSetter::setUniform(unsigned int shaderID, std::string_view fieldName, int integ)
 {
 	glUniform1i(getUniformLocation(shaderID, fieldName), integ);
+}
+
+void UniformSetter::bindUniformBlock(unsigned int shaderID, std::string_view blockName, unsigned int bindingIndex)
+{
+	unsigned int blockIndex = glGetUniformBlockIndex(shaderID, blockName.data());
+
+	if(blockIndex == GL_INVALID_INDEX)
+	{
+		throw std::invalid_argument{std::format("{} is not a valid uniform block name in shader {}", blockName, shaderID)};
+	}
+
+	glUniformBlockBinding(shaderID, blockIndex, bindingIndex);
 }

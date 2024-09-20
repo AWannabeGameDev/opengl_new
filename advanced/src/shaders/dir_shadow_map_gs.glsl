@@ -1,6 +1,6 @@
 #version 460 core
 
-const int MAX_DIR_LIGHTS = 10;
+const int MAX_DIR_LIGHTS = 3;
 
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3 * MAX_DIR_LIGHTS) out;
@@ -19,7 +19,7 @@ void main()
 {
     for(int dirLightIdx = 0; dirLightIdx < u_numDirLights; dirLightIdx++)
     {
-        gl_layer = dirLightIdx;
+        gl_Layer = dirLightIdx;
 
         for(int i = 0; i < 3; i++)
         {

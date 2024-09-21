@@ -10,17 +10,93 @@
 
 using namespace models;
 
-void Application::addLightUniforms()
+void Application::loadTextures()
 {
-	uniforms.addUniform(shader, "u_dirLightShadowMaps");
-	uniforms.addUniform(shader, "u_pointLightShadowMaps");
+	cubeShininess = 128.0f; 
+	floorShininess = 32.0f;
+	lightCubeEmissiveStrength = 1.0f;
+	floorHeightScale = 0.07f;
+	numDispLayers = 10;
 
-	uniforms.addUniform(shader, "u_viewPos");
-	uniforms.addUniform(shader, "u_ambience");
-}
+	TextureParameterSet texParams;
+	texParams.minFilter = GL_LINEAR_MIPMAP_LINEAR;
+	texParams.magFilter = GL_LINEAR;
+	texParams.texWrapS = GL_REPEAT;
+	texParams.texWrapT = GL_REPEAT;
+	texParams.texWrapR = GL_REPEAT;
 
-void Application::addTextureUniforms()
-{
+	woodCubeModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/container_diffuse.png", true);
+	woodCubeModelInfo.specularMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/container_specular.png", true);
+
+	floorModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/bricks2_diffuse.jpg", false);
+	//floorSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_specular.png", true);
+	floorModelInfo.normalMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_normal.jpg", false);
+	floorModelInfo.dispMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_displacement.jpg", false);
+
+	texParams.minFilter = GL_LINEAR;
+	texParams.magFilter = GL_LINEAR;
+	texParams.texWrapS = GL_CLAMP_TO_EDGE;
+	texParams.texWrapT = GL_CLAMP_TO_EDGE;
+	texParams.texWrapR = GL_CLAMP_TO_EDGE;
+
+	std::string_view skyboxPaths[6]
+	{
+		"../res/skybox_pos_x.png", "../res/skybox_neg_x.png",
+		"../res/skybox_pos_y.png", "../res/skybox_neg_y.png",
+		"../res/skybox_pos_z.png", "../res/skybox_neg_z.png"
+	};
+
+	skybox = createCubemap(texParams, GL_SRGB, skyboxPaths, false);
+	glActiveTexture(GL_TEXTURE0 + SKYBOX_TEXTURE_UNIT);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+
+	texParams.minFilter = GL_NEAREST;
+	texParams.magFilter = GL_NEAREST;
+	texParams.texWrapS = GL_REPEAT;
+	texParams.texWrapT = GL_REPEAT;
+	texParams.texWrapR = GL_REPEAT;
+
+	blackTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
+	whiteTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
+	lightCubeModelInfo.emissiveMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
+	defaultNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
+
+	glGenFramebuffers(1, &textureWriteFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
+	glViewport(0, 0, 1, 1);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lightCubeModelInfo.emissiveMapID, 0);
+	glClearColor(0.0f, 1.0f, 1.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blackTexture, 0);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, whiteTexture, 0);
+	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, defaultNormalTexture, 0);
+	glClearColor(0.5f, 0.5f, 1.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	woodCubeModelInfo.emissiveMapID = blackTexture;
+	woodCubeModelInfo.normalMapID = defaultNormalTexture;
+	woodCubeModelInfo.dispMapID = blackTexture;
+
+	lightCubeModelInfo.diffuseMapID = blackTexture;
+	lightCubeModelInfo.specularMapID = blackTexture;
+	lightCubeModelInfo.normalMapID = defaultNormalTexture;
+	lightCubeModelInfo.dispMapID = blackTexture;
+
+	floorModelInfo.specularMapID = whiteTexture;
+	floorModelInfo.emissiveMapID = blackTexture;
+
 	uniforms.addUniform(shader, "u_diffuse");
 	uniforms.addUniform(shader, "u_specular");
 	uniforms.addUniform(shader, "u_emissive");
@@ -31,11 +107,132 @@ void Application::addTextureUniforms()
 	uniforms.addUniform(shader, "u_numDispLayers");
 	uniforms.addUniform(shader, "u_emissiveStrength");
 
+	glUseProgram(shader);
+	uniforms.setUniform(shader, "u_diffuse", DIFFUSE_TEXTURE_UNIT);   // These five can
+	uniforms.setUniform(shader, "u_specular", SPECULAR_TEXTURE_UNIT); // have texture-arrays
+	uniforms.setUniform(shader, "u_emissive", EMISSIVE_TEXTURE_UNIT); // of the same size
+	uniforms.setUniform(shader, "u_normal", NORMAL_TEXTURE_UNIT);
+	uniforms.setUniform(shader, "u_displacement", DISPLACEMENT_TEXTURE_UNIT);
+
 	uniforms.addUniform(skyboxShader, "u_skybox");
-	uniforms.addUniform(fbShader, "fbTexture");
+
+	glUseProgram(skyboxShader);
+	uniforms.setUniform(skyboxShader, "u_skybox", SKYBOX_TEXTURE_UNIT);
 }
 
-void Application::initLightStructsAndMatrices()
+size_t Application::loadModels()
+{
+	woodCubeModelInfo.indexCount = cube::NUM_INDICES;
+	woodCubeModelInfo.eboOffset = 0;
+	woodCubeModelInfo.vboOffset = 0;
+	woodCubeModelInfo.instanceCount = NUM_CUBES;
+	woodCubeModelInfo.instanceOffset = 0;
+
+	lightCubeModelInfo.indexCount = cube::NUM_INDICES;
+	lightCubeModelInfo.eboOffset = 0;
+	lightCubeModelInfo.vboOffset = 0;
+	lightCubeModelInfo.instanceCount = 1;
+	lightCubeModelInfo.instanceOffset = NUM_CUBES;
+
+	floorModelInfo.indexCount = xysquare::NUM_INDICES;
+	floorModelInfo.eboOffset = cube::NUM_INDICES;
+	floorModelInfo.vboOffset = cube::NUM_VERTS;
+	floorModelInfo.instanceCount = 1;
+	floorModelInfo.instanceOffset = NUM_CUBES + 1;
+
+	glm::vec2 cubeTexCoords[cube::NUM_VERTS] =
+	{
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
+		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}
+	};
+
+	glm::vec3 cubeTangets[cube::NUM_VERTS] =
+	{
+		{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
+		{-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
+		{-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
+		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}
+	};
+
+	glm::vec2 floorTexCoords[xysquare::NUM_VERTS] =
+	{
+		{2.5f, 2.5f}, {0.0f, 2.5f}, {0.0f, 0.0f}, {2.5f, 0.0f}
+	};
+
+	glm::vec3 floorTangents[xysquare::NUM_VERTS] =
+	{
+		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}
+	};
+
+	using std::byte;
+	
+	std::vector<byte> vboVector;
+	vboVector.insert(vboVector.end(), (byte*)cube::positions, (byte*)cube::positions + sizeof(cube::positions));
+	vboVector.insert(vboVector.end(), (byte*)xysquare::positions, (byte*)xysquare::positions + sizeof(xysquare::positions));
+	vboVector.insert(vboVector.end(), (byte*)cubeTexCoords, (byte*)cubeTexCoords + sizeof(cubeTexCoords));
+	vboVector.insert(vboVector.end(), (byte*)floorTexCoords, (byte*)floorTexCoords + sizeof(floorTexCoords));
+	vboVector.insert(vboVector.end(), (byte*)cube::normals, (byte*)cube::normals + sizeof(cube::normals));
+	vboVector.insert(vboVector.end(), (byte*)xysquare::normals, (byte*)xysquare::normals + sizeof(xysquare::normals));
+	vboVector.insert(vboVector.end(), (byte*)cubeTangets, (byte*)cubeTangets + sizeof(cubeTangets));
+	vboVector.insert(vboVector.end(), (byte*)floorTangents, (byte*)floorTangents + sizeof(floorTangents));
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, vboVector.size(), vboVector.data(), GL_STATIC_DRAW);
+
+	std::vector<byte> eboVector;
+	eboVector.insert(eboVector.end(), (byte*)cube::indices, (byte*)cube::indices + sizeof(cube::indices));
+	eboVector.insert(eboVector.end(), (byte*)xysquare::indices, (byte*)xysquare::indices + sizeof(xysquare::indices));
+
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, eboVector.size(), eboVector.data(), GL_STATIC_DRAW);
+
+	return vboVector.size();
+}
+
+void Application::createObjects()
+{
+	// Later work here : multiple light cubes
+
+	floorWidth = 20.0f;
+
+	srand((unsigned int)time(0));
+	for(glm::mat4& cubeTransformMat : cubeTransformMats)
+	{
+		cubeTransformMat = glm::translate(glm::mat4{1.0f}, glm::vec3{randrange(-9.5f, 9.5f), 0.50f, randrange(-9.5f, 9.5f)});
+	}
+	
+	lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, glm::vec3{0.0f, 0.5f, 0.0f}) * 
+							glm::scale(glm::mat4{1.0f}, glm::vec3{0.25f, 0.25f, 0.25f});
+
+	floorTransformMat = glm::rotate(glm::mat4{1.0f}, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f}) * 
+						glm::scale(glm::mat4{1.0f}, glm::vec3{floorWidth, floorWidth, 1.0f});
+
+	// Later work here : add texture maps as part of object info
+
+	using std::byte;
+
+	std::vector<byte> instanceVBOVector;
+	instanceVBOVector.insert(instanceVBOVector.end(), (byte*)cubeTransformMats,
+							 (byte*)cubeTransformMats + sizeof(cubeTransformMats));
+	instanceVBOVector.insert(instanceVBOVector.end(), (byte*)&lightCubeTransformMat,
+							 (byte*)&lightCubeTransformMat + sizeof(lightCubeTransformMat));
+	instanceVBOVector.insert(instanceVBOVector.end(), (byte*)&floorTransformMat,
+							 (byte*)&floorTransformMat + sizeof(floorTransformMat));
+
+	glGenBuffers(1, &instanceVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+	glBufferData(GL_ARRAY_BUFFER, instanceVBOVector.size(), instanceVBOVector.data(), GL_STATIC_DRAW);
+}
+
+void Application::createLightSources()
 {
 	ambience = 0.1f;
 
@@ -89,162 +286,6 @@ void Application::initLightStructsAndMatrices()
 	pointLightViewMatrices[5] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
 											glm::vec3{0.0f, 0.0f, -1.0f}, 
 											glm::vec3{0.0f, -1.0f, 0.0f});
-}
-
-void Application::createLightShadowMaps()
-{
-	TextureParameterSet shadowMapParams;
-	shadowMapParams.minFilter = GL_LINEAR;
-	shadowMapParams.magFilter = GL_LINEAR;
-	shadowMapParams.texWrapS = GL_CLAMP_TO_BORDER;
-	shadowMapParams.texWrapT = GL_CLAMP_TO_BORDER;
-	shadowMapParams.texWrapR = GL_CLAMP_TO_BORDER;
-
-	dirLightsShadowMapArray = createTexture(GL_TEXTURE_2D_ARRAY, shadowMapParams, GL_DEPTH_COMPONENT16, 
-											SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_DIR_LIGHTS);
-	pointLightsShadowMapArray = createCubemap(shadowMapParams, GL_DEPTH_COMPONENT16, 
-											  SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_POINT_LIGHTS);
-
-	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, dirLightsShadowMapArray);
-	glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT);
-	glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointLightsShadowMapArray);												   
-}
-
-size_t Application::createVBO()
-{
-	glm::vec2 cubeTexCoords[cube::NUM_VERTS] =
-	{
-		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
-		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
-		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
-		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
-		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f},
-		{1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}
-	};
-
-	glm::vec3 cubeTangets[cube::NUM_VERTS] =
-	{
-		{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
-		{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
-		{-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
-		{-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
-		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
-		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}
-	};
-
-	glm::vec2 floorTexCoords[xysquare::NUM_VERTS] =
-	{
-		//{floorWidth / 8, floorWidth / 8}, {0.0f, floorWidth / 8}, {0.0f, 0.0f}, {floorWidth / 8, 0.0f}
-		{floorWidth / 8.0f, floorWidth / 8.0f}, {0.0f, floorWidth / 8.0f}, {0.0f, 0.0f}, {floorWidth / 8.0f, 0.0f}
-	};
-
-	glm::vec3 floorTangents[xysquare::NUM_VERTS] =
-	{
-		{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}
-	};
-
-	using std::byte;
-	
-	std::vector<byte> vboVector;
-	vboVector.insert(vboVector.end(), (byte*)cube::positions, (byte*)cube::positions + sizeof(cube::positions));
-	vboVector.insert(vboVector.end(), (byte*)xysquare::positions, (byte*)xysquare::positions + sizeof(xysquare::positions));
-	vboVector.insert(vboVector.end(), (byte*)cubeTexCoords, (byte*)cubeTexCoords + sizeof(cubeTexCoords));
-	vboVector.insert(vboVector.end(), (byte*)floorTexCoords, (byte*)floorTexCoords + sizeof(floorTexCoords));
-	vboVector.insert(vboVector.end(), (byte*)cube::normals, (byte*)cube::normals + sizeof(cube::normals));
-	vboVector.insert(vboVector.end(), (byte*)xysquare::normals, (byte*)xysquare::normals + sizeof(xysquare::normals));
-	vboVector.insert(vboVector.end(), (byte*)cubeTangets, (byte*)cubeTangets + sizeof(cubeTangets));
-	vboVector.insert(vboVector.end(), (byte*)floorTangents, (byte*)floorTangents + sizeof(floorTangents));
-
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, vboVector.size(), vboVector.data(), GL_STATIC_DRAW);
-
-	return vboVector.size();
-}
-
-void Application::createEBO()
-{
-	using std::byte;
-
-	std::vector<byte> eboVector;
-	eboVector.insert(eboVector.end(), (byte*)cube::indices, (byte*)cube::indices + sizeof(cube::indices));
-	eboVector.insert(eboVector.end(), (byte*)xysquare::indices, (byte*)xysquare::indices + sizeof(xysquare::indices));
-
-	glGenBuffers(1, &ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, eboVector.size(), eboVector.data(), GL_STATIC_DRAW);
-}	 
-
-void Application::initObjectTransforms()
-{
-	// Later work here : multiple light cubes
-
-	floorWidth = 20.0f;
-
-	srand((unsigned int)time(0));
-	for(glm::mat4& cubeTransformMat : cubeTransformMats)
-	{
-		cubeTransformMat = glm::translate(glm::mat4{1.0f}, glm::vec3{randrange(-9.5f, 9.5f), 0.50f, randrange(-9.5f, 9.5f)});
-	}
-	
-	lightCubeTransformMat = glm::translate(glm::mat4{1.0f}, pointLights[0].position) * 
-							glm::scale(glm::mat4{1.0f}, glm::vec3{0.25f, 0.25f, 0.25f});
-
-	floorTransformMat = glm::rotate(glm::mat4{1.0f}, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f}) * 
-						glm::scale(glm::mat4{1.0f}, glm::vec3{floorWidth, floorWidth, 1.0f});
-}
-
-void Application::createObjectTransformVBO()
-{
-	// Later work here : add texture maps as part of model info
-
-	using std::byte;
-
-	std::vector<byte> instanceVBOVector;
-	instanceVBOVector.insert(instanceVBOVector.end(), (byte*)cubeTransformMats,
-							 (byte*)cubeTransformMats + sizeof(cubeTransformMats));
-	instanceVBOVector.insert(instanceVBOVector.end(), (byte*)&lightCubeTransformMat,
-							 (byte*)&lightCubeTransformMat + sizeof(lightCubeTransformMat));
-	instanceVBOVector.insert(instanceVBOVector.end(), (byte*)&floorTransformMat,
-							 (byte*)&floorTransformMat + sizeof(floorTransformMat));
-
-	glGenBuffers(1, &instanceVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, instanceVBOVector.size(), instanceVBOVector.data(), GL_STATIC_DRAW);
-}
-
-void Application::setModelInfos()
-{
-	woodCubeModelInfo.indexCount = cube::NUM_INDICES;
-	woodCubeModelInfo.eboOffset = 0;
-	woodCubeModelInfo.vboOffset = 0;
-	woodCubeModelInfo.instanceCount = NUM_CUBES;
-	woodCubeModelInfo.instanceOffset = 0;
-
-	lightCubeModelInfo.indexCount = cube::NUM_INDICES;
-	lightCubeModelInfo.eboOffset = 0;
-	lightCubeModelInfo.vboOffset = 0;
-	lightCubeModelInfo.instanceCount = 1;
-	lightCubeModelInfo.instanceOffset = NUM_CUBES;
-
-	floorModelInfo.indexCount = xysquare::NUM_INDICES;
-	floorModelInfo.eboOffset = cube::NUM_INDICES;
-	floorModelInfo.vboOffset = cube::NUM_VERTS;
-	floorModelInfo.instanceCount = 1;
-	floorModelInfo.instanceOffset = NUM_CUBES + 1;
-}
-
-void Application::createMatrixUBO()
-{
-	glGenBuffers(1, &matsUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, matsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(camera.projectionMatrix()));
-
-	uniforms.bindUniformBlock(shader, "mats", CAM_MATS_UNI_BINDING);
-	uniforms.bindUniformBlock(skyboxShader, "mats", CAM_MATS_UNI_BINDING);
-	glBindBufferBase(GL_UNIFORM_BUFFER, CAM_MATS_UNI_BINDING, matsUBO);
 
 	glGenBuffers(1, &lightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
@@ -307,95 +348,33 @@ void Application::createMatrixUBO()
 	uniforms.bindUniformBlock(shader, "pointLightFarPlane", POINTLIGHT_FARPLANE_UNI_BINDING);
 	uniforms.bindUniformBlock(omniShadowMapShader, "pointLightFarPlane", POINTLIGHT_FARPLANE_UNI_BINDING);
 	glBindBufferBase(GL_UNIFORM_BUFFER, POINTLIGHT_FARPLANE_UNI_BINDING, pointLightFarPlaneUBO);
-}
 
-void Application::createTextureMaps()
-{
-	cubeShininess = 128.0f; 
-	floorShininess = 32.0f;
-	lightCubeEmissiveStrength = 1.0f;
-	floorHeightScale = 0.07f;
-	numDispLayers = 10;
+	TextureParameterSet shadowMapParams;
+	shadowMapParams.minFilter = GL_LINEAR;
+	shadowMapParams.magFilter = GL_LINEAR;
+	shadowMapParams.texWrapS = GL_CLAMP_TO_BORDER;
+	shadowMapParams.texWrapT = GL_CLAMP_TO_BORDER;
+	shadowMapParams.texWrapR = GL_CLAMP_TO_BORDER;
 
-	TextureParameterSet texParams;
-	texParams.minFilter = GL_LINEAR_MIPMAP_LINEAR;
-	texParams.magFilter = GL_LINEAR;
-	texParams.texWrapS = GL_REPEAT;
-	texParams.texWrapT = GL_REPEAT;
-	texParams.texWrapR = GL_REPEAT;
+	dirLightsShadowMapArray = createTexture(GL_TEXTURE_2D_ARRAY, shadowMapParams, GL_DEPTH_COMPONENT16, 
+											SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_DIR_LIGHTS);
+	pointLightsShadowMapArray = createCubemap(shadowMapParams, GL_DEPTH_COMPONENT16, 
+											  SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, MAX_POINT_LIGHTS);
 
-	woodCubeModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/container_diffuse.png", true);
-	woodCubeModelInfo.specularMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/container_specular.png", true);
+	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, dirLightsShadowMapArray);
+	glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointLightsShadowMapArray);
 
-	floorModelInfo.diffuseMapID = createTexture(GL_TEXTURE_2D, texParams, GL_SRGB, "../res/bricks2_diffuse.jpg", false);
-	//floorSpecularTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/brick_specular.png", true);
-	floorModelInfo.normalMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_normal.jpg", false);
-	floorModelInfo.dispMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB, "../res/bricks2_displacement.jpg", false);
+	uniforms.addUniform(shader, "u_dirLightShadowMaps");
+	uniforms.addUniform(shader, "u_pointLightShadowMaps");
+	uniforms.addUniform(shader, "u_viewPos");
+	uniforms.addUniform(shader, "u_ambience");
 
-	texParams.minFilter = GL_LINEAR;
-	texParams.magFilter = GL_LINEAR;
-	texParams.texWrapS = GL_CLAMP_TO_EDGE;
-	texParams.texWrapT = GL_CLAMP_TO_EDGE;
-	texParams.texWrapR = GL_CLAMP_TO_EDGE;
-
-	std::string_view skyboxPaths[6]
-	{
-		"../res/skybox_pos_x.png", "../res/skybox_neg_x.png",
-		"../res/skybox_pos_y.png", "../res/skybox_neg_y.png",
-		"../res/skybox_pos_z.png", "../res/skybox_neg_z.png"
-	};
-
-	skybox = createCubemap(texParams, GL_SRGB, skyboxPaths, false);
-	glActiveTexture(GL_TEXTURE0 + SKYBOX_TEXTURE_UNIT);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
-
-	texParams.minFilter = GL_NEAREST;
-	texParams.magFilter = GL_NEAREST;
-	texParams.texWrapS = GL_REPEAT;
-	texParams.texWrapT = GL_REPEAT;
-	texParams.texWrapR = GL_REPEAT;
-
-	blackTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
-	whiteTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
-	lightCubeModelInfo.emissiveMapID = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
-	defaultNormalTexture = createTexture(GL_TEXTURE_2D, texParams, GL_RGB16F, 1, 1);
-
-	glGenFramebuffers(1, &textureWriteFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, textureWriteFBO);
-	glViewport(0, 0, 1, 1);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lightCubeModelInfo.emissiveMapID, 0);
-	glClearColor(pointLights[0].diffuseColor.r,
-				 pointLights[0].diffuseColor.g, pointLights[0].diffuseColor.b, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blackTexture, 0);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, whiteTexture, 0);
-	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, defaultNormalTexture, 0);
-	glClearColor(0.5f, 0.5f, 1.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	woodCubeModelInfo.emissiveMapID = blackTexture;
-	woodCubeModelInfo.normalMapID = defaultNormalTexture;
-	woodCubeModelInfo.dispMapID = blackTexture;
-
-	lightCubeModelInfo.diffuseMapID = blackTexture;
-	lightCubeModelInfo.specularMapID = blackTexture;
-	lightCubeModelInfo.normalMapID = defaultNormalTexture;
-	lightCubeModelInfo.dispMapID = blackTexture;
-
-	floorModelInfo.specularMapID = whiteTexture;
-	floorModelInfo.emissiveMapID = blackTexture;
+	glUseProgram(shader);
+	uniforms.setUniform(shader, "u_dirLightShadowMaps", DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT);
+	uniforms.setUniform(shader, "u_pointLightShadowMaps", POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT); 
+	uniforms.setUniform(shader, "u_ambience", ambience);
 }
 
 void Application::createPostProcessFBO()
@@ -447,9 +426,14 @@ void Application::createPostProcessFBO()
 	glGenBuffers(1, &fbQuadEBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fbQuadEBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(xysquare::indices), xysquare::indices, GL_STATIC_DRAW);
+
+	uniforms.addUniform(fbShader, "fbTexture");
+
+	glUseProgram(fbShader);
+	uniforms.setUniform(fbShader, "fbTexture", FB_COLOR_TEXTURE_UNIT);
 }
 
-void Application::setVAOFormatsAndBuffers(size_t vboSize)
+void Application::configureVAO(size_t vboSize)
 {
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -493,24 +477,16 @@ void Application::setVAOFormatsAndBuffers(size_t vboSize)
 	}
 }
 
-void Application::setUniforms()
+void Application::miscInit()
 {
-	glUseProgram(shader);
+	glGenBuffers(1, &matsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, matsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(camera.projectionMatrix()));
 
-	uniforms.setUniform(shader, "u_ambience", ambience);
-	uniforms.setUniform(shader, "u_diffuse", DIFFUSE_TEXTURE_UNIT);   // These five can
-	uniforms.setUniform(shader, "u_specular", SPECULAR_TEXTURE_UNIT); // have texture-arrays
-	uniforms.setUniform(shader, "u_emissive", EMISSIVE_TEXTURE_UNIT); // of the same size
-	uniforms.setUniform(shader, "u_normal", NORMAL_TEXTURE_UNIT);
-	uniforms.setUniform(shader, "u_displacement", DISPLACEMENT_TEXTURE_UNIT);
-	uniforms.setUniform(shader, "u_dirLightShadowMaps", DIRLIGHT_SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
-	uniforms.setUniform(shader, "u_pointLightShadowMaps", POINTLIGHT_SHADOW_MAP_TEXTURE_UNIT); // Texture-arrays probably
-
-	glUseProgram(skyboxShader);
-	uniforms.setUniform(skyboxShader, "u_skybox", SKYBOX_TEXTURE_UNIT);
-
-	glUseProgram(fbShader);
-	uniforms.setUniform(fbShader, "fbTexture", FB_COLOR_TEXTURE_UNIT);
+	uniforms.bindUniformBlock(shader, "mats", CAM_MATS_UNI_BINDING);
+	uniforms.bindUniformBlock(skyboxShader, "mats", CAM_MATS_UNI_BINDING);
+	glBindBufferBase(GL_UNIFORM_BUFFER, CAM_MATS_UNI_BINDING, matsUBO);
 }
 
 Application::Application() :
@@ -548,27 +524,13 @@ Application::Application() :
 	keys.setKeybind("LIGHT_UP", GLFW_KEY_O);
 	keys.setKeybind("LIGHT_DOWN", GLFW_KEY_L);
 
-	addTextureUniforms();
-	addLightUniforms();
-
-	initLightStructsAndMatrices();
-	initObjectTransforms();
-	
-	createObjectTransformVBO();
-	size_t vboSize = createVBO();
-	createEBO();
-
-	setModelInfos();
-
-	createMatrixUBO();
-	createLightShadowMaps();
-	createTextureMaps();
-
+	loadTextures();
+	size_t vboSize = loadModels();
+	createObjects();
+	createLightSources();
 	createPostProcessFBO();
-
-	setVAOFormatsAndBuffers(vboSize);
-
-	setUniforms();
+	configureVAO(vboSize);
+	miscInit();
 }
 
 Application::~Application()

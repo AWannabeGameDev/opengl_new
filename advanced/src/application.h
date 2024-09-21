@@ -22,20 +22,13 @@ struct ModelInfo
 class Application
 {
 private :
-	void addLightUniforms();
-	void initLightStructsAndMatrices();
-	void createLightShadowMaps();
-	void addTextureUniforms();
-	size_t createVBO();
-	void createEBO();
-	void initObjectTransforms();
-	void createObjectTransformVBO();
-	void setModelInfos();
-	void createMatrixUBO();
-	void createTextureMaps();
+	void loadTextures();
+	size_t loadModels();
+	void createObjects();
+	void createLightSources();
 	void createPostProcessFBO();
-	void setVAOFormatsAndBuffers(size_t vboSize);
-	void setUniforms();
+	void configureVAO(size_t vboSize);
+	void miscInit();
 
 	static constexpr int FB_COLOR_TEXTURE_UNIT = 0,
 		SKYBOX_TEXTURE_UNIT = 1,

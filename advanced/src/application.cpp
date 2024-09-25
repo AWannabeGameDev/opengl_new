@@ -249,19 +249,8 @@ void Application::createLightSources()
 	maxBrightDiffuseColor = {0.0f, 1.0f, 1.0f};
 	maxBrightSpecularColor = {0.0f, 0.4f, 0.4f};
 
-	PointLight& pointLight = pointLights.emplace_back();
-	glm::mat4& pointLightPosMatrix = pointLightPosMatrices.emplace_back();
-
-	pointLight.position = {0.0f, 0.5f, 0.0f};
-	pointLight.diffuseColor = maxBrightDiffuseColor;
-	pointLight.specularColor = maxBrightSpecularColor;
-	pointLight.attenConst = 1.0f;
-	pointLight.attenLin = 0.045f;
-	pointLight.attenQuad = 0.0075f;
-
 	pointLightFarPlane = 20.0f;
 	pointLightProjMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, pointLightFarPlane);
-	pointLightPosMatrix = glm::translate(glm::mat4{1.0f}, -pointLight.position);
 
 	pointLightViewMatrices[0] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
 											glm::vec3{1.0f, 0.0f, 0.0f}, 
@@ -286,6 +275,28 @@ void Application::createLightSources()
 	pointLightViewMatrices[5] = glm::lookAt(glm::vec3{0.0f, 0.0f, 0.0f}, 
 											glm::vec3{0.0f, 0.0f, -1.0f}, 
 											glm::vec3{0.0f, -1.0f, 0.0f});
+
+	PointLight* pointLight = &pointLights.emplace_back();
+	glm::mat4* pointLightPosMatrix = &pointLightPosMatrices.emplace_back();
+
+	(*pointLight).position = {0.0f, 0.5f, 0.0f};
+	(*pointLight).diffuseColor = maxBrightDiffuseColor;
+	(*pointLight).specularColor = maxBrightSpecularColor;
+	(*pointLight).attenConst = 1.0f;
+	(*pointLight).attenLin = 0.045f;
+	(*pointLight).attenQuad = 0.0075f;
+
+	*pointLightPosMatrix = glm::translate(glm::mat4{1.0f}, -(*pointLight).position);
+
+	pointLight = &pointLights.emplace_back();
+	pointLightPosMatrix = &pointLightPosMatrices.emplace_back();
+
+	(*pointLight).position = {0.0f, 1.0f, 0.0f};
+	(*pointLight).diffuseColor = maxBrightDiffuseColor;
+	(*pointLight).specularColor = maxBrightSpecularColor;
+	(*pointLight).attenConst = 1.0f;
+	(*pointLight).attenLin = 0.045f;
+	(*pointLight).attenQuad = 0.0075f;
 
 	glGenBuffers(1, &lightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);

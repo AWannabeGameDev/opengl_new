@@ -2,16 +2,16 @@
 
 # TODO: Handle subproject dependencies properly
 
-srcDirs = src
-incDirs = ..\dependencies\include
-libDirs = ..\dependencies\lib "C:\Program^Files^(x86)\Windows^Kits\10\Lib\10.0.26100.0\um\x64"
-intermDir = interms
-
-libFilesDebug = utility\utility_debug.lib GLFW\libglfw3.a Gdi32.lib
-libFilesRelease = utility\utility_release.lib GLFW\libglfw3.a Gdi32.lib
-
 projectFolder = ..
 subProjDeps = utility
+
+srcDirs = src
+incDirs = ..\dependencies\include $(projectFolder)\utility\include
+libDirs = ..\dependencies\lib $(projectFolder)\utility\lib "C:\Program^Files^(x86)\Windows^Kits\10\Lib\10.0.26100.0\um\x64"
+intermDir = interms
+
+libFilesDebug = utility_debug.lib GLFW\libglfw3.a Gdi32.lib
+libFilesRelease = utility_release.lib GLFW\libglfw3.a Gdi32.lib
 
 outDebug = bin\advanced_debug.exe
 outRelease = bin\advanced_release.exe

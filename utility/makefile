@@ -1,11 +1,11 @@
 # Just change these variables and everything just magically works :D
 
 srcDirs = src
-incDirs = ..\dependencies\include
+incDirs = ..\dependencies\include include
 intermDir = interms
 
-outDebug = ..\dependencies\lib\utility\utility_debug.lib
-outRelease = ..\dependencies\lib\utility\utility_release.lib
+outDebug = lib\utility_debug.lib
+outRelease = lib\utility_release.lib
 
 preDefinesDebug = _DEBUG
 predefinesRelease = 

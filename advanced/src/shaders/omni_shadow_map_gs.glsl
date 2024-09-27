@@ -21,7 +21,7 @@ out vec3 fragViewCoord;
 
 void main()
 {
-	for(int pointLightIdx = gl_InvocationID * 10; pointLightIdx < u_numPointLights; pointLightIdx++)
+	for(int pointLightIdx = gl_InvocationID; pointLightIdx < u_numPointLights; pointLightIdx++)
 	{
 		for(int face = 0; face < 6; face++)
 		{

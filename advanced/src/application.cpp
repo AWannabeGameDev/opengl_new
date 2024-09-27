@@ -298,6 +298,8 @@ void Application::createLightSources()
 	(*pointLight).attenLin = 0.045f;
 	(*pointLight).attenQuad = 0.0075f;
 
+	*pointLightPosMatrix = glm::translate(glm::mat4{1.0f}, -(*pointLight).position);
+
 	glGenBuffers(1, &lightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, (MAX_DIR_LIGHTS * sizeof(DirectionalLight)) + (MAX_POINT_LIGHTS * sizeof(PointLight)), 

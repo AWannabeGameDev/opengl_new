@@ -3,15 +3,15 @@
 # TODO: Handle subproject dependencies properly
 
 projectFolder = ..
-subProjDeps = utility
+subProjDeps = gl_util
 
 srcDirs = src
-incDirs = ..\dependencies\include $(projectFolder)\utility\include
-libDirs = ..\dependencies\lib $(projectFolder)\utility\lib "C:\Program^Files^(x86)\Windows^Kits\10\Lib\10.0.26100.0\um\x64"
+incDirs = ..\dependencies\include $(projectFolder)\gl_util\include
+libDirs = ..\dependencies\lib $(projectFolder)\gl_util\lib "C:\Program^Files^(x86)\Windows^Kits\10\Lib\10.0.26100.0\um\x64"
 intermDir = interms
 
-libFilesDebug = utility_debug.lib GLFW\libglfw3.a Gdi32.lib
-libFilesRelease = utility_release.lib GLFW\libglfw3.a Gdi32.lib
+libFilesDebug = gl_util_debug.lib GLFW\libglfw3.a Gdi32.lib
+libFilesRelease = gl_util_release.lib GLFW\libglfw3.a Gdi32.lib
 
 outDebug = bin\advanced_debug.exe
 outRelease = bin\advanced_release.exe

@@ -1,7 +1,7 @@
 #include "application.h"
-#include <utility/raw_model_data.h>
+#include <gl_util/raw_model_data.h>
 #include <ctime>
-#include <utility/texture.h>
+#include <gl_util/texture.h>
 #include <format>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>

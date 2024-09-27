@@ -1,12 +1,12 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <utility/util.h>
-#include <utility/keyboard_input.h>
-#include <utility/mouse_input.h>
-#include <utility/camera.h>
-#include <utility/uniform_setter.h>
-#include <utility/lighting.h>
+#include <gl_util/util.h>
+#include <gl_util/keyboard_input.h>
+#include <gl_util/mouse_input.h>
+#include <gl_util/camera.h>
+#include <gl_util/uniform_setter.h>
+#include <gl_util/lighting.h>
 #include <vector>
 
 struct ModelInfo
